@@ -96,6 +96,7 @@ class StudentAttendanceService
 
         // Check if tute exists for this month (format: Y-m)
         $thisMonthAlreadyTute = Titute::where('student_id', $student_id)
+            ->whereIn('class_category_has_student_class_id', $categoryIds)
             ->where('titute_for', $now->format('M Y'))
             ->exists();
 
@@ -172,6 +173,7 @@ class StudentAttendanceService
                     // Add payment and attendance information
                     'payment_info' => $lastPaymentRecord ? [
                         'last_payment_date' => $lastPaymentRecord->created_at->format('Y-m-d'),
+                        'payment_for' => $lastPaymentRecord->payment_for,
                         'last_payment_amount' => $lastPaymentRecord->amount,
                         'payment_status' => $lastPaymentRecord->status,
                     ] : null,

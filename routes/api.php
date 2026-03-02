@@ -33,6 +33,7 @@ use App\Http\Controllers\SystemUserController;
 use App\Http\Controllers\UserTypesController;
 use App\Http\Controllers\TeacherController;
 use App\Http\Controllers\TeacherPaymentsController;
+use App\Http\Controllers\TituteController;
 use Illuminate\Support\Facades\Route;
 
 // Public routes
@@ -277,9 +278,40 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/activated/{customId}', [ReadQRCodeController::class, 'studentIdCardActive']);
     });
 
+    /*=================================================
+     Student tute API Sections
+    /*================================================= */
+
+    Route::prefix('tute')->group(function () {
+
+        Route::get(
+            '/class-wise/{customId}',
+            [TituteController::class, 'readClassWiseTute']
+        );
+
+        Route::get(
+            '/student/{studentId}/class/{classCategoryStudentClassId}',
+            [TituteController::class, 'getStudentWithAllTutes']
+        );
+
+        Route::get(
+            '/check/{studentId}/{classCategoryStudentClassId}',
+            [TituteController::class, 'checkTute']
+        );
+
+        Route::post(
+            '/',
+            [TituteController::class, 'createTitute']
+        );
+
+        Route::patch(
+            '/{id}/toggle-status',
+            [TituteController::class, 'toggleStatus']
+        );
+    });
 
     /*=================================================
-     Permission API Sections
+    Permission API Sections
     /*================================================= */
 
     Route::prefix('permission')->group(function () {

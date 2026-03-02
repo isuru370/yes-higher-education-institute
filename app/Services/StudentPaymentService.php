@@ -71,6 +71,7 @@ class StudentPaymentService
         // Get student
         $student = Student::where('custom_id', $custom_id)
         ->where('student_disable',false)
+        ->where('is_active',true)
         ->first();
 
         // Log::info("Fetching payments for student with custom_id: $custom_id");
@@ -91,6 +92,7 @@ class StudentPaymentService
             'studentClass.subject'
         ])
         ->where('student_id', $student->id)
+        ->where('status', 1) // Only active classes
         ->get();
 
         if ($studentClasses->isEmpty()) {
