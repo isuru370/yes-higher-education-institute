@@ -10,6 +10,7 @@ use App\Models\StudentStudentStudentClass;
 use Carbon\Carbon;
 use Exception;
 use App\Models\Grade;
+use App\Models\QuickPhoto;
 use App\Models\StudentPortalLogin;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -401,6 +402,21 @@ class StudentService
     {
         DB::beginTransaction();
         try {
+            if ($request->quick_image_id) {
+
+                $quickPhoto = QuickPhoto::where('custom_id', $request->quick_image_id)
+                    ->where('is_active', 1)
+                    ->first();
+
+                if (!$quickPhoto) {
+                    return response()->json([
+                        'status' => 'error',
+                        'message' => 'Quick photo not found'
+                    ], 404);
+                }
+
+                $quickPhoto->update(['is_active' => 0]);
+            }
             $validator = Validator::make($request->all(), [
                 'fname' => 'required|string|max:255',
                 'lname' => 'required|string|max:255',
