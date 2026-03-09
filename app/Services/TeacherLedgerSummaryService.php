@@ -68,41 +68,41 @@ class TeacherLedgerSummaryService
     private function getOpeningBalance(string $yearMonth): float
     {
         try {
-            // Validate YYYY-MM
+
             if (!preg_match('/^\d{4}-\d{2}$/', $yearMonth) || $yearMonth <= '2024-01') {
                 return 0.0;
             }
 
-            // Start from 2026-01
             $startDate = Carbon::create(2026, 1, 1)->startOfDay();
             $endDate   = Carbon::createFromFormat('Y-m', $yearMonth)->startOfMonth();
 
-            // If month before 2026-01
             if ($endDate->lessThanOrEqualTo($startDate)) {
                 return 0.0;
             }
 
             $totalBalance = 0;
-
             $teachers = Teacher::where('is_active', 1)->get();
 
-            // Loop month by month from 2026-01 until selected month (exclusive)
             $period = $startDate->copy();
+
             while ($period->lt($endDate)) {
 
                 $monthStart = $period->copy()->startOfMonth();
                 $monthEnd   = $period->copy()->endOfMonth();
 
+
                 foreach ($teachers as $teacher) {
-                    // දැන් ප්‍රතිශතය class එකෙන් ගන්නවා (teacher_percentage)
+
+                    $teacherTotalShare = 0;
+
                     $classes = ClassRoom::where('teacher_id', $teacher->id)
                         ->where('is_active', 1)
                         ->get();
 
                     foreach ($classes as $class) {
+
                         $percentage = $class->teacher_percentage ?? 0;
 
-                        // මෙම class සඳහා ගෙවීම්
                         $classEarnings = Payments::where('status', 1)
                             ->whereBetween('payment_date', [$monthStart, $monthEnd])
                             ->whereHas('studentStudentClass.studentClass', function ($q) use ($class) {
@@ -111,32 +111,36 @@ class TeacherLedgerSummaryService
                             })
                             ->sum('amount');
 
-                        // මෙම class සඳහා ගුරුවරයාට ගෙවා ඇති මුදල
-                        $classPaid = TeacherPayment::where('status', 1)
-                            ->whereBetween('date', [$monthStart, $monthEnd])
-                            ->where('teacher_id', $teacher->id)
-                            // අමතරව, payment එක specific class එකකටදැයි පරීක්ෂා කරන්න
-                            // (මෙය ඔබේ system අනුව customize කරන්න)
-                            ->sum('payment');
+                        $teacherShare = ($classEarnings * $percentage) / 100;
 
-                        // මෙම class සඳහා net balance
-                        $classNet = (($classEarnings * $percentage) / 100) - $classPaid;
-
-                        $totalBalance += $classNet;
+                        $teacherTotalShare += $teacherShare;
                     }
+
+                    // teacher payment (MONTH level)
+                    $teacherPaid = TeacherPayment::where('status', 1)
+                        ->whereBetween('date', [$monthStart, $monthEnd])
+                        ->where('teacher_id', $teacher->id)
+                        ->sum('payment');
+
+                    $teacherNet = $teacherTotalShare - $teacherPaid;
+
+
+                    $totalBalance += $teacherNet;
                 }
 
-                // Move to next month
                 $period->addMonth();
             }
 
             return round($totalBalance, 2);
         } catch (Throwable $e) {
-            Log::error('Opening Balance Calculation Error', ['error' => $e->getMessage()]);
+
+            Log::error('Opening Balance Calculation Error', [
+                'error' => $e->getMessage()
+            ]);
+
             return 0.0;
         }
     }
-
 
 
     /**

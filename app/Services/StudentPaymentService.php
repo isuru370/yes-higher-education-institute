@@ -57,127 +57,126 @@ class StudentPaymentService
     }
 
     public function fetchStudentClassWisePayments($custom_id)
-{
-    try {
+    {
+        try {
 
-        if (empty($custom_id)) {
-            return response()->json([
-                'status' => 'error',
-                'message' => 'Student Custom ID is required',
-                'data' => []
-            ], 400);
-        }
+            if (empty($custom_id)) {
+                return response()->json([
+                    'status' => 'error',
+                    'message' => 'Student Custom ID is required',
+                    'data' => []
+                ], 400);
+            }
 
-        // Get student
-        $student = Student::where('custom_id', $custom_id)
-        ->where('student_disable',false)
-        ->where('is_active',true)
-        ->first();
-
-        // Log::info("Fetching payments for student with custom_id: $custom_id");
-
-        if (!$student) {
-            return response()->json([
-                'status' => 'error',
-                'message' => 'Student not found',
-                'data' => []
-            ], 404);
-        }
-
-        // Get ALL classes with relationships
-        $studentClasses = StudentStudentStudentClass::with([
-            'student',
-            'classCategoryHasStudentClass.classCategory',
-            'studentClass.grade',
-            'studentClass.subject'
-        ])
-        ->where('student_id', $student->id)
-        ->where('status', 1) // Only active classes
-        ->get();
-
-        if ($studentClasses->isEmpty()) {
-            return response()->json([
-                'status' => 'error',
-                'message' => 'No classes found for this student',
-                'data' => []
-            ], 404);
-        }
-
-        $result = $studentClasses->map(function ($studentClassModel) {
-
-            // Get latest payment for this class
-            $latestPayment = Payments::where('status', 1) // Only consider active payments
-                ->where('student_id', $studentClassModel->student_id)
-                ->where('student_student_student_classes_id', $studentClassModel->id)
-                ->orderBy('payment_date', 'desc')
+            // Get student
+            $student = Student::where('custom_id', $custom_id)
+                ->where('student_disable', false)
+                ->where('is_active', true)
                 ->first();
 
-            return [
+            // Log::info("Fetching payments for student with custom_id: $custom_id");
 
-                'student_student_student_classes_id' => $studentClassModel->id,
-                'student_id' => $studentClassModel->student_id,
-                'class_category_has_student_class_id' => $studentClassModel->class_category_has_student_class_id,
-                'status' => $studentClassModel->status,
-                'is_free_card' => $studentClassModel->is_free_card,
+            if (!$student) {
+                return response()->json([
+                    'status' => 'error',
+                    'message' => 'Student not found',
+                    'data' => []
+                ], 404);
+            }
 
-                'student' => [
-                    'id' => $studentClassModel->student->id,
-                    'custom_id' => $studentClassModel->student->custom_id,
-                    'first_name' => $studentClassModel->student->fname,
-                    'last_name' => $studentClassModel->student->lname,
-                    'guardian_mobile' => $studentClassModel->student->guardian_mobile,
-                    'img_url' => $studentClassModel->student->img_url,
-                ],
+            // Get ALL classes with relationships
+            $studentClasses = StudentStudentStudentClass::with([
+                'student',
+                'classCategoryHasStudentClass.classCategory',
+                'studentClass.grade',
+                'studentClass.subject'
+            ])
+                ->where('student_id', $student->id)
+                ->where('status', 1) // Only active classes
+                ->get();
 
-                'class_category_has_student_class' => [
-                    'id' => $studentClassModel->classCategoryHasStudentClass->id,
-                    'fees' => $studentClassModel->classCategoryHasStudentClass->fees,
-                    'class_category' => [
-                        'category_name' =>
+            if ($studentClasses->isEmpty()) {
+                return response()->json([
+                    'status' => 'error',
+                    'message' => 'No classes found for this student',
+                    'data' => []
+                ], 404);
+            }
+
+            $result = $studentClasses->map(function ($studentClassModel) {
+
+                // Get latest payment for this class
+                $latestPayment = Payments::where('status', 1) // Only consider active payments
+                    ->where('student_id', $studentClassModel->student_id)
+                    ->where('student_student_student_classes_id', $studentClassModel->id)
+                    ->orderBy('payment_date', 'desc')
+                    ->first();
+
+                return [
+
+                    'student_student_student_classes_id' => $studentClassModel->id,
+                    'student_id' => $studentClassModel->student_id,
+                    'class_category_has_student_class_id' => $studentClassModel->class_category_has_student_class_id,
+                    'status' => $studentClassModel->status,
+                    'is_free_card' => $studentClassModel->is_free_card,
+
+                    'student' => [
+                        'id' => $studentClassModel->student->id,
+                        'custom_id' => $studentClassModel->student->custom_id,
+                        'first_name' => $studentClassModel->student->fname,
+                        'last_name' => $studentClassModel->student->lname,
+                        'guardian_mobile' => $studentClassModel->student->guardian_mobile,
+                        'img_url' => $studentClassModel->student->img_url,
+                    ],
+
+                    'class_category_has_student_class' => [
+                        'id' => $studentClassModel->classCategoryHasStudentClass->id,
+                        'fees' => $studentClassModel->classCategoryHasStudentClass->fees,
+                        'class_category' => [
+                            'category_name' =>
                             $studentClassModel->classCategoryHasStudentClass
-                            ->classCategory->category_name ?? null,
-                    ]
-                ],
+                                ->classCategory->category_name ?? null,
+                        ]
+                    ],
 
-                'student_class' => [
-                    'id' => $studentClassModel->studentClass->id,
-                    'class_name' => $studentClassModel->studentClass->class_name,
-                    'grade' => $studentClassModel->studentClass->grade ? [
-                        'grade_name' =>
+                    'student_class' => [
+                        'id' => $studentClassModel->studentClass->id,
+                        'class_name' => $studentClassModel->studentClass->class_name,
+                        'grade' => $studentClassModel->studentClass->grade ? [
+                            'grade_name' =>
                             $studentClassModel->studentClass->grade->grade_name
-                    ] : null,
-                    'subject' => $studentClassModel->studentClass->subject ? [
-                        'subject_name' =>
+                        ] : null,
+                        'subject' => $studentClassModel->studentClass->subject ? [
+                            'subject_name' =>
                             $studentClassModel->studentClass->subject->subject_name
-                    ] : null,
-                ],
+                        ] : null,
+                    ],
 
-                // 🔥 Latest Payment Added Here
-                'latest_payment' => $latestPayment ? [
-                    'payment_id' => $latestPayment->id,
-                    'amount' => $latestPayment->amount,
-                    'payment_date' => $latestPayment->payment_date,
-                    'payment_for_month' => $latestPayment->payment_for,
-                ] : null
+                    // 🔥 Latest Payment Added Here
+                    'latest_payment' => $latestPayment ? [
+                        'payment_id' => $latestPayment->id,
+                        'amount' => $latestPayment->amount,
+                        'payment_date' => $latestPayment->payment_date,
+                        'payment_for_month' => $latestPayment->payment_for,
+                    ] : null
 
-            ];
-        });
+                ];
+            });
 
-        return response()->json([
-            'status' => 'success',
-            'message' => 'Student class payments fetched successfully',
-            'data' => $result
-        ]);
+            return response()->json([
+                'status' => 'success',
+                'message' => 'Student class payments fetched successfully',
+                'data' => $result
+            ]);
+        } catch (Exception $e) {
 
-    } catch (Exception $e) {
-
-        return response()->json([
-            'status' => 'error',
-            'message' => 'Failed to fetch payments data',
-            'data' => []
-        ], 500);
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Failed to fetch payments data',
+                'data' => []
+            ], 500);
+        }
     }
-}
 
 
 
@@ -297,6 +296,7 @@ class StudentPaymentService
             'student_id' => 'required|integer',
             'student_student_student_classes_id' => 'required|integer',
             'payment_for' => 'required|string|max:20', // e.g., "2025 Feb"
+
         ]);
 
         try {
@@ -323,7 +323,10 @@ class StudentPaymentService
             // Or if no duplicate found for active payment, create new record
 
             // Save record
-            $payment = Payments::create($validated);
+            $payment = Payments::create(array_merge(
+                $validated,
+                ['user_id' => auth()->id()] // track who created
+            ));
 
             DB::commit();
 

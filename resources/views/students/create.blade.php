@@ -134,12 +134,12 @@
                                     </div>
 
                                     <div class="col-md-6 mb-3">
-                                        <label class="form-label">First Name <span class="text-danger">*</span></label>
+                                        <label class="form-label">Full Name <span class="text-danger">*</span></label>
                                         <input type="text" name="fname" class="form-control" required>
                                     </div>
 
                                     <div class="col-md-6 mb-3">
-                                        <label class="form-label">Last Name <span class="text-danger">*</span></label>
+                                        <label class="form-label">Initial Name <span class="text-danger">*</span></label>
                                         <input type="text" name="lname" class="form-control" required>
                                     </div>
 

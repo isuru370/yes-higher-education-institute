@@ -28,11 +28,11 @@ use App\Http\Controllers\TeacherPaymentsController;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Route;
 
+
 // Welcome Page Route
 Route::get('/', function () {
     if (auth()->check()) {
-        return view('welcome');
-        // return redirect('/dashboard');
+        return redirect('/dashboard');
     }
     return view('welcome');
 })->name('welcome');
@@ -40,22 +40,6 @@ Route::get('/', function () {
 Route::get('/student_regiter', function () {
     return view('student_register');
 })->name('student_register');
-
-Route::get('/interactive-learning', function () {
-    return view('interactive-learning');
-})->name('interactive-learning');
-
-Route::get('/mobile-app', function () {
-    return view('mobile-app');
-})->name('mobile-app');
-
-Route::get('/web-platform', function () {
-    return view('web-platform');
-})->name('web-platform');
-
-Route::get('/pricing', function () {
-    return view('pricing');
-})->name('pricing');
 
 // Authentication routes - guest users සඳහා පමණි
 Route::middleware(['guest'])->group(function () {

@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Login - NEXORA Education</title>
+    <title>Login - YES Higher Education</title>
     <!-- Bootstrap CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <!-- Font Awesome -->
@@ -31,7 +31,7 @@
             </div>
             
             <div class="card-header login-header">
-                <h4><i class="fas fa-graduation-cap me-2"></i>NEXORA Education</h4>
+                <h4><i class="fas fa-graduation-cap me-2"></i>YES Higher Education System</h4>
                 <p class="mb-0">Welcome back! Please login to continue</p>
             </div>
             <div class="card-body login-body">

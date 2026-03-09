@@ -18,6 +18,7 @@ class Payments extends Model
         'payment_for',
         'student_id',
         'student_student_student_classes_id',
+        'user_id',
     ];
 
     // Type casting for JSON responses
@@ -29,6 +30,7 @@ class Payments extends Model
         'payment_date'                        => 'datetime',
         'created_at'                          => 'datetime',
         'updated_at'                          => 'datetime',
+        'user_id'                          => 'integer',
     ];
 
     public function student()
@@ -39,5 +41,9 @@ class Payments extends Model
     public function studentStudentClass()
     {
         return $this->belongsTo(StudentStudentStudentClass::class, 'student_student_student_classes_id', 'id');
+    }
+
+    public function user(){
+        return $this->belongsTo(User::class,'user_id','id');
     }
 }

@@ -19,6 +19,7 @@ class CreatePaymentsTable extends Migration
                 ->constrained('students');
             $table->foreignId('student_student_student_classes_id')
                 ->constrained('student_student_student_classes');
+            $table->foreignId('user_id')->constrained('users');
             $table->timestamps();
         });
     }
