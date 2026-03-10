@@ -51,9 +51,9 @@ class StudentController extends Controller
         return $this->studentService->filterByCreatedDate($request);
     }
 
-    public function fetchStudentCustomId($customId)
+    public function fetchStudentCustomId(Request $request)
     {
-        return $this->studentService->fetchStudentCustomId($customId);
+        return $this->studentService->fetchStudentByQRCode($request);
     }
     public function updateStudentImage(Request $request, $custom_id)
     {
@@ -108,14 +108,14 @@ class StudentController extends Controller
     }
 
 
-    public function editPage($custom_id)
+    public function editPage($student_id)
     {
-        return view('students.edit', compact('custom_id'));
+        return view('students.edit', compact('student_id'));
     }
 
-    public function show($custom_id)
+    public function show($student_id)
     {
-        return view('students.show', compact('custom_id'));
+        return view('students.show', compact('student_id'));
     }
 
     public function studentImages()
@@ -137,9 +137,9 @@ class StudentController extends Controller
             if (!empty($search)) {
                 $query->where(function ($q) use ($search) {
                     $q->where('custom_id', 'like', "%{$search}%")
-                        ->orWhere('fname', 'like', "%{$search}%")
-                        ->orWhere('lname', 'like', "%{$search}%")
-                        ->orWhereRaw("CONCAT(fname,' ',lname) LIKE ?", ["%{$search}%"]);
+                        ->orWhere('full_name', 'like', "%{$search}%")
+                        ->orWhere('initial_name', 'like', "%{$search}%")
+                        ->orWhereRaw("CONCAT(full_name,' ',initial_name) LIKE ?", ["%{$search}%"]);
                 });
             }
 
@@ -160,7 +160,7 @@ class StudentController extends Controller
             // Get all active students for dropdown
             $allStudents = Student::where('is_active', 1)
                 ->orderBy('custom_id')
-                ->get(['custom_id', 'fname', 'lname', 'img_url']);
+                ->get(['custom_id', 'full_name', 'initial_name', 'img_url']);
 
             return view('students.images', compact('students', 'allStudents'));
         } catch (\Exception $e) {

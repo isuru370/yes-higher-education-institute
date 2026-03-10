@@ -7,6 +7,7 @@ use Illuminate\Http\Request;
 
 class SmsController extends Controller
 {
+
     protected $smsService;
 
     public function __construct(SmsService $smsService)
@@ -14,18 +15,41 @@ class SmsController extends Controller
         $this->smsService = $smsService;
     }
 
-    public function sendSMS(Request $request)
+    // Send Single SMS
+    public function send($number, $message)
     {
-        $request->validate([
-            "mobile"  => "required",
-            "message" => "required",
-        ]);
+        $response = $this->smsService->sendSms($number, $message);
 
-        $result = $this->smsService->sendSMS(
-            $request->mobile,
-            $request->message
-        );
+        return response()->json($response);
+    }
 
-        return response()->json($result);
+
+    // Send Bulk SMS
+    public function sendBulk(Request $request)
+    {
+
+        $numbers = $request->numbers;
+        $message = $request->message;
+        $campaign = $request->campaignName;
+
+        $response = $this->smsService->sendBulkSms($numbers, $message, $campaign);
+
+        return response()->json($response);
+    }
+
+    public function sendOtp($number)
+    {
+        $response = $this->smsService->sendOtp($number);
+
+        return response()->json($response);
+    }
+
+
+    // Check Balance
+    public function balance()
+    {
+        $response = $this->smsService->getBalance();
+
+        return response()->json($response);
     }
 }

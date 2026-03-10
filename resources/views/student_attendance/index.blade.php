@@ -1,7 +1,7 @@
 @extends('layouts.app')
 
-@section('title', 'Attendance')
-@section('page-title', 'Attendance')
+@section('title', 'Attendance Management')
+@section('page-title', 'Attendance Management')
 
 @section('breadcrumb')
     <li class="breadcrumb-item"><a href="{{ route('dashboard') }}">Dashboard</a></li>
@@ -11,71 +11,146 @@
 @section('content')
     <meta name="csrf-token" content="{{ csrf_token() }}">
 
-    <div class="container-fluid">
-        <div class="row">
-            <div class="col-md-12">
-                <!-- Success/Error Messages -->
-                <div id="attendanceMessages"></div>
-
-                <!-- QR Scanner and Student ID Input Section -->
-                <div class="card mb-4">
-                    <div class="card-header bg-primary text-white">
-                        <h5 class="card-title mb-0">
-                            <i class="fas fa-qrcode me-2"></i>Student Identification
-                        </h5>
+    <div class="container-fluid px-4">
+        <!-- Modern Gradient Background -->
+        <div class="position-relative mb-4">
+            <div class="bg-gradient-primary rounded-4 p-4 text-white shadow-lg" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+                <div class="row align-items-center">
+                    <div class="col">
+                        <h4 class="mb-1 fw-bold"><i class="fas fa-calendar-check me-2"></i>Attendance Management</h4>
+                        <p class="mb-0 opacity-75 small">Scan QR code or search student to mark attendance</p>
                     </div>
-                    <div class="card-body">
-                        <div class="row">
-                            <div class="col-md-6">
-                                <div class="qr-scanner-container text-center p-3 border rounded">
-                                    <i class="fas fa-camera fa-3x text-muted mb-2"></i>
-                                    <h6 class="mb-1">QR Code Scanner</h6>
-                                    <p class="text-muted mb-2 small">Scan student QR code to auto-fill information</p>
-                                    <button class="btn btn-outline-primary btn-sm" id="startScanner">
-                                        <i class="fas fa-camera me-1"></i>Start QR Scanner
-                                    </button>
-                                    <div id="qr-reader" class="mt-2" style="display: none;"></div>
-                                    <div id="qr-error" class="mt-1 text-danger small" style="display: none;"></div>
+                    <div class="col-auto">
+                        <div class="bg-white bg-opacity-25 rounded-3 px-3 py-2">
+                            <i class="fas fa-clock me-1"></i>
+                            <span id="currentDateTime"></span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <!-- Decorative Elements -->
+            <div class="position-absolute top-0 end-0 translate-middle-y d-none d-lg-block">
+                <i class="fas fa-qrcode fa-4x text-white opacity-10"></i>
+            </div>
+        </div>
+
+        <!-- Success/Error Messages -->
+        <div id="attendanceMessages"></div>
+
+        <!-- Main Content Grid -->
+        <div class="row g-4">
+            <!-- Left Column - QR Scanner & Manual Input -->
+            <div class="col-lg-5">
+                <!-- QR Scanner Card -->
+                <div class="card border-0 shadow-sm rounded-4 overflow-hidden mb-4">
+                    <div class="card-header bg-white border-0 pt-4 px-4">
+                        <div class="d-flex align-items-center">
+                            <div class="icon-circle bg-primary bg-opacity-10 text-primary me-3">
+                                <i class="fas fa-qrcode"></i>
+                            </div>
+                            <div>
+                                <h6 class="fw-bold mb-0">QR Code Scanner</h6>
+                                <small class="text-muted">Scan student QR code to auto-fill information</small>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card-body p-4">
+                        <div class="qr-scanner-container text-center p-4 bg-light rounded-3">
+                            <div class="scanner-icon-wrapper mb-3">
+                                <div class="scanner-pulse">
+                                    <i class="fas fa-camera fa-4x text-primary opacity-75"></i>
                                 </div>
                             </div>
-                            <div class="col-md-6">
-                                <div class="manual-input-container">
-                                    <h6 class="mb-3">Or Enter Student ID Manually</h6>
-                                    <div class="input-group">
-                                        <input type="text" class="form-control form-control-sm" id="studentCustomId"
-                                            placeholder="Enter Student Custom ID (e.g., SA25087)" autocomplete="off">
-                                        <button class="btn btn-primary btn-sm" type="button" id="searchStudent">
-                                            <i class="fas fa-search me-1"></i>Search
-                                        </button>
-                                    </div>
-                                </div>
-                            </div>
+                            <h6 class="fw-bold mb-2">Ready to Scan</h6>
+                            <p class="text-muted small mb-3">Position QR code within the frame to scan</p>
+                            <button class="btn btn-primary px-4 rounded-pill" id="startScanner">
+                                <i class="fas fa-camera me-2"></i>Start QR Scanner
+                            </button>
+                            <div id="qr-reader" class="mt-3" style="display: none;"></div>
+                            <div id="qr-error" class="mt-2 text-danger small" style="display: none;"></div>
                         </div>
                     </div>
                 </div>
 
-                <!-- Student Information Display -->
-                <div class="card mb-4 student-info-card" id="studentInfoCard" style="display: none;">
-                    <div class="card-header bg-success text-white py-2">
-                        <h6 class="card-title mb-0">
-                            <i class="fas fa-user-graduate me-2"></i>Student Information
-                        </h6>
+                <!-- Manual Input Card -->
+                <div class="card border-0 shadow-sm rounded-4 overflow-hidden">
+                    <div class="card-header bg-white border-0 pt-4 px-4">
+                        <div class="d-flex align-items-center">
+                            <div class="icon-circle bg-success bg-opacity-10 text-success me-3">
+                                <i class="fas fa-keyboard"></i>
+                            </div>
+                            <div>
+                                <h6 class="fw-bold mb-0">Manual Entry</h6>
+                                <small class="text-muted">Enter QR code manually</small>
+                            </div>
+                        </div>
                     </div>
-                    <div class="card-body p-3">
-                        <div class="row g-2" id="studentDetails">
+                    <div class="card-body p-4">
+                        <div class="manual-input-container">
+                            <div class="mb-3">
+                                <label class="form-label small fw-bold text-muted mb-2">
+                                    <i class="fas fa-qrcode me-1"></i>QR Code / Custom ID
+                                </label>
+                                <div class="input-group">
+                                    <span class="input-group-text bg-light border-0">
+                                        <i class="fas fa-search text-muted"></i>
+                                    </span>
+                                    <input type="text" class="form-control form-control-lg bg-light border-0" 
+                                           id="studentQrCode" placeholder="Enter TMP... or SA..." autocomplete="off">
+                                    <button class="btn btn-success px-4" type="button" id="searchStudent">
+                                        Search
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="qr-type-hints d-flex gap-2">
+                                <span class="badge bg-warning bg-opacity-25 text-dark px-3 py-2 rounded-pill">
+                                    <i class="fas fa-clock me-1"></i>TMP... (Temporary)
+                                </span>
+                                <span class="badge bg-success bg-opacity-25 text-dark px-3 py-2 rounded-pill">
+                                    <i class="fas fa-check-circle me-1"></i>SA... (Permanent)
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right Column - Student Info & Classes -->
+            <div class="col-lg-7">
+                <!-- Student Information Card -->
+                <div class="card border-0 shadow-sm rounded-4 overflow-hidden mb-4" id="studentInfoCard" style="display: none;">
+                    <div class="card-header bg-white border-0 pt-4 px-4">
+                        <div class="d-flex align-items-center">
+                            <div class="icon-circle bg-info bg-opacity-10 text-info me-3">
+                                <i class="fas fa-user-graduate"></i>
+                            </div>
+                            <div>
+                                <h6 class="fw-bold mb-0">Student Information</h6>
+                                <small class="text-muted">Student details and statistics</small>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card-body p-4">
+                        <div class="row g-4" id="studentDetails">
                             <!-- Student details will be loaded here -->
                         </div>
                     </div>
                 </div>
 
                 <!-- Available Classes Section -->
-                <div class="card mb-4" id="ongoingClassesCard" style="display: none;">
-                    <div class="card-header bg-info text-white py-2">
-                        <h6 class="card-title mb-0">
-                            <i class="fas fa-chalkboard-teacher me-2"></i>Available Classes for Attendance
-                        </h6>
+                <div class="card border-0 shadow-sm rounded-4 overflow-hidden" id="ongoingClassesCard" style="display: none;">
+                    <div class="card-header bg-white border-0 pt-4 px-4">
+                        <div class="d-flex align-items-center">
+                            <div class="icon-circle bg-warning bg-opacity-10 text-warning me-3">
+                                <i class="fas fa-chalkboard-teacher"></i>
+                            </div>
+                            <div>
+                                <h6 class="fw-bold mb-0">Available Classes for Attendance</h6>
+                                <small class="text-muted">Classes within attendance window</small>
+                            </div>
+                        </div>
                     </div>
-                    <div class="card-body p-3">
+                    <div class="card-body p-4">
                         <div class="row g-3" id="ongoingClassesList">
                             <!-- Available classes will be loaded here -->
                         </div>
@@ -83,103 +158,118 @@
                 </div>
 
                 <!-- No Classes Message -->
-                <div class="card mb-4" id="noClassesCard" style="display: none;">
-                    <div class="card-body text-center py-4">
-                        <i class="fas fa-calendar-times fa-2x text-muted mb-2"></i>
-                        <h6 class="text-muted mb-2">No Classes Available for Attendance</h6>
-                        <p class="text-muted small mb-1">This student doesn't have any classes within the attendance window.
-                        </p>
+                <div class="card border-0 shadow-sm rounded-4 overflow-hidden" id="noClassesCard" style="display: none;">
+                    <div class="card-body text-center py-5">
+                        <div class="empty-state-icon mb-3">
+                            <i class="fas fa-calendar-times fa-4x text-muted opacity-25"></i>
+                        </div>
+                        <h6 class="fw-bold mb-2">No Classes Available</h6>
+                        <p class="text-muted small mb-1">This student doesn't have any classes within the attendance window.</p>
                         <p class="text-muted small">Attendance window: 1 hour before class start → class end time</p>
                     </div>
                 </div>
 
                 <!-- Loading Spinner -->
-                <div class="text-center mt-4" id="loadingSpinner" style="display: none;">
-                    <div class="spinner-border spinner-border-sm text-primary" role="status">
+                <div class="text-center py-5" id="loadingSpinner" style="display: none;">
+                    <div class="spinner-border text-primary mb-2" role="status">
                         <span class="visually-hidden">Loading...</span>
                     </div>
-                    <p class="mt-2 small">Loading student information...</p>
+                    <p class="text-muted small">Loading student information...</p>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- Attendance Confirmation Modal -->
-    <div class="modal fade" id="attendanceModal" tabindex="-1" aria-labelledby="attendanceModalLabel" aria-hidden="true">
-        <div class="modal-dialog modal-sm">
-            <div class="modal-content">
-                <div class="modal-header bg-warning text-white py-2">
-                    <h6 class="modal-title mb-0" id="attendanceModalLabel">
+    <!-- Attendance Confirmation Modal - Modern Design -->
+    <div class="modal fade" id="attendanceModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content border-0 shadow-lg rounded-4">
+                <div class="modal-header bg-gradient-warning text-white border-0 rounded-top-4" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);">
+                    <h6 class="modal-title fw-bold">
                         <i class="fas fa-user-check me-2"></i>Confirm Attendance
                     </h6>
-                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"
-                        aria-label="Close"></button>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
-                <div class="modal-body p-3">
-                    <div class="text-center mb-3">
-                        <i class="fas fa-user-check fa-2x text-warning mb-2"></i>
-                        <h6 class="mb-1">Mark Attendance?</h6>
-                        <p class="text-muted small mb-0">Are you sure you want to mark attendance for this class?</p>
+                <div class="modal-body p-4">
+                    <div class="text-center mb-4">
+                        <div class="confirmation-icon mb-3">
+                            <i class="fas fa-check-circle fa-3x text-warning"></i>
+                        </div>
+                        <h6 class="fw-bold mb-1">Mark Attendance?</h6>
+                        <p class="text-muted small mb-0">Please confirm to mark attendance for this class</p>
                     </div>
 
-                    <div class="card mb-3">
-                        <div class="card-body p-2">
-                            <h6 class="card-title small mb-2">Class Details:</h6>
+                    <!-- Class Details Card -->
+                    <div class="card bg-light border-0 rounded-3 mb-4">
+                        <div class="card-body p-3">
+                            <div class="d-flex align-items-center mb-3">
+                                <div class="icon-circle bg-primary bg-opacity-10 text-primary me-2">
+                                    <i class="fas fa-info"></i>
+                                </div>
+                                <span class="fw-bold small">Class Details</span>
+                            </div>
                             <div class="row g-2">
                                 <div class="col-6">
-                                    <small class="text-muted d-block">Student</small>
-                                    <p class="mb-0 small" id="modalStudentName">-</p>
+                                    <div class="detail-item p-2 bg-white rounded-2">
+                                        <small class="text-muted d-block">Student</small>
+                                        <span class="fw-semibold small" id="modalStudentName">-</span>
+                                    </div>
                                 </div>
                                 <div class="col-6">
-                                    <small class="text-muted d-block">Class</small>
-                                    <p class="mb-0 small" id="modalClassName">-</p>
-                                </div>
-                            </div>
-                            <div class="row g-2 mt-1">
-                                <div class="col-6">
-                                    <small class="text-muted d-block">Time</small>
-                                    <p class="mb-0 small" id="modalClassTime">-</p>
+                                    <div class="detail-item p-2 bg-white rounded-2">
+                                        <small class="text-muted d-block">Class</small>
+                                        <span class="fw-semibold small" id="modalClassName">-</span>
+                                    </div>
                                 </div>
                                 <div class="col-6">
-                                    <small class="text-muted d-block">Date</small>
-                                    <p class="mb-0 small" id="modalClassDate">-</p>
+                                    <div class="detail-item p-2 bg-white rounded-2">
+                                        <small class="text-muted d-block">Time</small>
+                                        <span class="fw-semibold small" id="modalClassTime">-</span>
+                                    </div>
                                 </div>
-                            </div>
-                            <div class="row g-2 mt-1">
-                                <div class="col-12">
-                                    <small class="text-muted d-block">Status</small>
-                                    <p class="mb-0 small">
-                                        <span class="badge badge-sm" id="modalStudentStatusBadge">-</span>
-                                    </p>
+                                <div class="col-6">
+                                    <div class="detail-item p-2 bg-white rounded-2">
+                                        <small class="text-muted d-block">Date</small>
+                                        <span class="fw-semibold small" id="modalClassDate">-</span>
+                                    </div>
                                 </div>
                             </div>
                         </div>
                     </div>
 
-                    <!-- SMS Notification Info -->
-                    <div class="alert alert-info alert-sm py-2 mb-2" id="smsNotificationInfo" style="display: none;">
-                        <i class="fas fa-sms me-1"></i>
-                        <span class="small" id="smsStatusText">SMS notification will be sent to guardian</span>
+                    <!-- Tute Option -->
+                    <div class="form-check mb-3">
+                        <input class="form-check-input" type="checkbox" id="markTuteCheckbox">
+                        <label class="form-check-label fw-medium" for="markTuteCheckbox">
+                            Mark tute for this month
+                        </label>
+                        <small class="text-muted d-block">Check if student received tute materials</small>
+                    </div>
+
+                    <!-- SMS Notification -->
+                    <div class="alert alert-info bg-info bg-opacity-10 border-0 rounded-3 py-2" id="smsNotificationInfo" style="display: none;">
+                        <div class="d-flex align-items-center">
+                            <i class="fas fa-sms text-info me-2"></i>
+                            <span class="small" id="smsStatusText">SMS will be sent to guardian</span>
+                        </div>
                     </div>
 
                     <form id="attendanceForm">
                         @csrf
                         <input type="hidden" id="attendance_student_id" name="student_id">
-                        <input type="hidden" id="attendance_student_class_id" name="student_student_student_class_id">
-                        <input type="hidden" id="attendance_class_id" name="attendance_id">
+                        <input type="hidden" id="attendance_student_class_id" name="student_student_student_classes_id">
+                        <input type="hidden" id="attendance_attendance_id" name="attendance_id">
+                        <input type="hidden" id="attendance_class_category_id" name="class_category_has_student_class_id">
                         <input type="hidden" id="attendance_guardian_mobile" name="guardian_mobile">
-                        <input type="hidden" id="attendance_student_name" name="student_name">
-                        <input type="hidden" id="attendance_class_name" name="class_name">
-                        <input type="hidden" id="attendance_class_time" name="class_time">
-                        <input type="hidden" id="attendance_attendance_count" name="attendance_count">
+                        <input type="hidden" id="attendance_tute" name="tute" value="0">
                     </form>
                 </div>
-                <div class="modal-footer py-2">
-                    <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">
-                        <i class="fas fa-times me-1"></i>Cancel
+                <div class="modal-footer bg-light border-0 rounded-bottom-4 p-3">
+                    <button type="button" class="btn btn-light rounded-pill px-4" data-bs-dismiss="modal">
+                        <i class="fas fa-times me-2"></i>Cancel
                     </button>
-                    <button type="button" class="btn btn-success btn-sm" id="confirmAttendanceBtn">
-                        <i class="fas fa-check me-1"></i>Confirm
+                    <button type="button" class="btn btn-success rounded-pill px-4" id="confirmAttendanceBtn">
+                        <i class="fas fa-check me-2"></i>Confirm
                     </button>
                 </div>
             </div>
@@ -189,153 +279,128 @@
 
 @push('styles')
     <style>
+        /* Modern Design Styles */
+        :root {
+            --primary-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            --warning-gradient: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+        }
+
+        .bg-gradient-primary {
+            background: var(--primary-gradient);
+        }
+
+        .bg-gradient-warning {
+            background: var(--warning-gradient);
+        }
+
+        .icon-circle {
+            width: 48px;
+            height: 48px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 16px;
+            font-size: 1.25rem;
+        }
+
         .qr-scanner-container {
-            border: 2px dashed #dee2e6;
-            border-radius: 8px;
-            background: #f8f9fa;
+            position: relative;
+            transition: all 0.3s ease;
         }
 
-        .student-info-card {
-            border-radius: 8px;
-        }
-
-        .class-card {
-            border: 1px solid #dee2e6;
-            border-radius: 8px;
-            transition: all 0.2s ease;
-            height: 100%;
-        }
-
-        .class-card:hover {
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-            border-color: #adb5bd;
-        }
-
-        .ongoing-badge {
-            position: absolute;
-            top: 8px;
-            right: 8px;
-            font-size: 10px;
-            padding: 2px 6px;
+        .scanner-pulse {
             animation: pulse 2s infinite;
         }
 
         @keyframes pulse {
             0% {
+                transform: scale(1);
                 opacity: 1;
             }
-
             50% {
+                transform: scale(1.1);
                 opacity: 0.7;
             }
-
             100% {
+                transform: scale(1);
                 opacity: 1;
             }
         }
 
-        .attendance-btn {
-            border-radius: 6px;
-            font-weight: 500;
-            transition: all 0.2s ease;
-            width: 100%;
+        /* Class Card Design */
+        .class-card {
+            border: none;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
         }
 
-        .attendance-btn:disabled {
-            opacity: 0.6;
-            cursor: not-allowed;
+        .class-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, #667eea, #764ba2);
+            opacity: 0;
+            transition: opacity 0.3s ease;
         }
 
-        .attendance-btn:hover:not(:disabled) {
-            transform: translateY(-1px);
+        .class-card:hover::before {
+            opacity: 1;
+        }
+
+        .class-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1) !important;
+        }
+
+        .ongoing-badge {
+            position: absolute;
+            top: 12px;
+            right: 12px;
+            animation: blink 1.5s infinite;
+        }
+
+        @keyframes blink {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
         }
 
         .time-badge {
-            background: linear-gradient(135deg, #ffc107 0%, #ff9800 100%);
+            background: linear-gradient(135deg, #ff6b6b 0%, #ff8e53 100%);
             color: white;
-            font-size: 10px;
+            font-size: 11px;
             padding: 4px 8px;
+            border-radius: 6px;
         }
 
         .date-badge {
-            background: linear-gradient(135deg, #6f42c1 0%, #5a2d9c 100%);
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
             color: white;
-            font-size: 10px;
+            font-size: 11px;
             padding: 4px 8px;
-        }
-
-        .status-badge-active {
-            background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
-            color: white;
-            font-size: 10px;
-            padding: 2px 6px;
-        }
-
-        .status-badge-inactive {
-            background: linear-gradient(135deg, #dc3545 0%, #fd7e14 100%);
-            color: white;
-            font-size: 10px;
-            padding: 2px 6px;
-        }
-
-        .badge-sm {
-            font-size: 10px;
-            padding: 2px 6px;
-        }
-
-        .alert-sm {
-            padding: 4px 8px;
-            font-size: 12px;
-            border-radius: 4px;
+            border-radius: 6px;
         }
 
         .attendance-time-window {
-            background: #e8f4fd;
-            border-left: 3px solid #2196f3;
-            padding: 6px 10px;
-            border-radius: 4px;
-            margin: 8px 0;
-            font-size: 11px;
-        }
-
-        .attendance-disabled-message {
-            background: #fff3cd;
-            border-left: 3px solid #ffc107;
-            padding: 6px 10px;
-            border-radius: 4px;
-            margin: 8px 0;
-            font-size: 11px;
-        }
-
-        .icon-wrapper {
-            width: 30px;
-            height: 30px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-
-        .avatar-sm {
-            width: 40px;
-            height: 40px;
-        }
-
-        .detail-item {
-            border-bottom: 1px solid #f8f9fa;
-            padding-bottom: 6px;
-            margin-bottom: 6px;
-        }
-
-        .detail-item:last-child {
-            border-bottom: none;
-            padding-bottom: 0;
-            margin-bottom: 0;
+            background: linear-gradient(135deg, #f6f9fc 0%, #e6f2ff 100%);
+            border-left: 3px solid #4facfe;
+            padding: 8px 12px;
+            border-radius: 8px;
+            margin: 12px 0;
         }
 
         .info-item {
-            border-radius: 4px;
-            padding: 4px 8px;
+            border-radius: 8px;
+            padding: 6px 10px;
             font-size: 11px;
+            transition: all 0.2s ease;
+        }
+
+        .info-item:hover {
+            transform: translateX(3px);
         }
 
         .payment-info {
@@ -353,16 +418,117 @@
             border: 1px solid #a5d6a7;
         }
 
-        .info-badge {
-            font-size: 10px;
-            padding: 2px 6px;
-            border-radius: 3px;
+        .avatar-sm {
+            width: 80px;
+            height: 80px;
+            border: 3px solid white;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+            transition: transform 0.3s ease;
         }
 
-        #qr-reader {
-            width: 100%;
-            max-width: 250px;
-            margin: 0 auto;
+        .avatar-sm:hover {
+            transform: scale(1.05);
+        }
+
+        .qr-type-badge {
+            font-size: 10px;
+            padding: 4px 8px;
+            border-radius: 20px;
+        }
+
+        .temp-qr {
+            background: #fff3cd;
+            color: #856404;
+        }
+
+        .perm-qr {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .attendance-btn {
+            border-radius: 8px;
+            font-weight: 600;
+            font-size: 12px;
+            padding: 8px 16px;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .attendance-btn:not(:disabled):hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+        }
+
+        .empty-state-icon {
+            animation: float 3s ease-in-out infinite;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-10px); }
+        }
+
+        /* Responsive Adjustments */
+        @media (max-width: 768px) {
+            .avatar-sm {
+                width: 60px;
+                height: 60px;
+            }
+            
+            .icon-circle {
+                width: 40px;
+                height: 40px;
+                font-size: 1rem;
+            }
+        }
+
+        /* Loading Spinner */
+        .spinner-border {
+            width: 3rem;
+            height: 3rem;
+        }
+
+        /* Modal Styles */
+        .modal-content {
+            border: none;
+        }
+
+        .rounded-top-4 {
+            border-top-left-radius: 1rem !important;
+            border-top-right-radius: 1rem !important;
+        }
+
+        .rounded-bottom-4 {
+            border-bottom-left-radius: 1rem !important;
+            border-bottom-right-radius: 1rem !important;
+        }
+
+        .bg-opacity-10 {
+            --bs-bg-opacity: 0.1;
+        }
+
+        .bg-opacity-25 {
+            --bs-bg-opacity: 0.25;
+        }
+
+        /* Form Controls */
+        .form-control:focus {
+            box-shadow: none;
+            border-color: #667eea;
+        }
+
+        .input-group-text {
+            border-radius: 10px 0 0 10px;
+        }
+
+        .form-control-lg {
+            border-radius: 0 10px 10px 0;
+        }
+
+        .btn-lg {
+            border-radius: 10px;
         }
     </style>
 @endpush
@@ -376,53 +542,59 @@
                 this.currentStudentData = null;
                 this.qrScanner = null;
                 this.csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
-                this.smsEnabled = false;
                 this.init();
+                this.updateDateTime();
+            }
+
+            updateDateTime() {
+                const update = () => {
+                    const now = new Date();
+                    const options = { 
+                        hour: '2-digit', 
+                        minute: '2-digit', 
+                        second: '2-digit',
+                        day: '2-digit',
+                        month: '2-digit',
+                        year: 'numeric'
+                    };
+                    document.getElementById('currentDateTime').textContent = now.toLocaleString('en-US', options);
+                };
+                update();
+                setInterval(update, 1000);
             }
 
             init() {
                 this.setupEventListeners();
-                this.checkSMSSettings();
             }
 
             setupEventListeners() {
-                // QR Scanner
                 const startScannerBtn = document.getElementById('startScanner');
                 if (startScannerBtn) {
                     startScannerBtn.addEventListener('click', () => this.toggleQRScanner());
                 }
 
-                // Manual Search
                 const searchStudentBtn = document.getElementById('searchStudent');
                 if (searchStudentBtn) {
                     searchStudentBtn.addEventListener('click', () => this.searchStudent());
                 }
 
-                const studentCustomIdInput = document.getElementById('studentCustomId');
-                if (studentCustomIdInput) {
-                    studentCustomIdInput.addEventListener('keypress', (e) => {
+                const studentQrCodeInput = document.getElementById('studentQrCode');
+                if (studentQrCodeInput) {
+                    studentQrCodeInput.addEventListener('keypress', (e) => {
                         if (e.key === 'Enter') this.searchStudent();
                     });
                 }
 
-                // Attendance Confirmation
                 const confirmAttendanceBtn = document.getElementById('confirmAttendanceBtn');
                 if (confirmAttendanceBtn) {
                     confirmAttendanceBtn.addEventListener('click', () => this.markAttendance());
                 }
-            }
 
-            checkSMSSettings() {
-                try {
-                    const savedSettings = localStorage.getItem('sms_settings');
-                    if (savedSettings) {
-                        const settings = JSON.parse(savedSettings);
-                        this.smsEnabled = settings.sms_enabled === true;
-                        console.log('SMS Enabled:', this.smsEnabled);
-                    }
-                } catch (error) {
-                    console.error('Error accessing SMS settings:', error);
-                    this.smsEnabled = false;
+                const markTuteCheckbox = document.getElementById('markTuteCheckbox');
+                if (markTuteCheckbox) {
+                    markTuteCheckbox.addEventListener('change', (e) => {
+                        document.getElementById('attendance_tute').value = e.target.checked ? '1' : '0';
+                    });
                 }
             }
 
@@ -435,12 +607,12 @@
 
                 if (this.qrScanner) {
                     this.stopQRScanner();
-                    scannerBtn.innerHTML = '<i class="fas fa-camera me-1"></i>Start QR Scanner';
+                    scannerBtn.innerHTML = '<i class="fas fa-camera me-2"></i>Start QR Scanner';
                     return;
                 }
 
                 try {
-                    scannerBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>Loading Scanner...';
+                    scannerBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Loading...';
 
                     if (typeof Html5QrcodeScanner === 'undefined') {
                         throw new Error('QR Scanner library not available');
@@ -448,7 +620,7 @@
 
                     qrReader.style.display = 'block';
                     if (qrError) qrError.style.display = 'none';
-                    scannerBtn.innerHTML = '<i class="fas fa-stop me-1"></i>Stop Scanner';
+                    scannerBtn.innerHTML = '<i class="fas fa-stop me-2"></i>Stop Scanner';
 
                     this.qrScanner = new Html5QrcodeScanner("qr-reader", {
                         fps: 10,
@@ -469,7 +641,7 @@
                         qrError.style.display = 'block';
                     }
                     if (scannerBtn) {
-                        scannerBtn.innerHTML = '<i class="fas fa-camera me-1"></i>Start QR Scanner';
+                        scannerBtn.innerHTML = '<i class="fas fa-camera me-2"></i>Start QR Scanner';
                     }
                     this.qrScanner = null;
                 }
@@ -486,158 +658,158 @@
             }
 
             onQRCodeScanned(decodedText) {
-                const customId = this.extractCustomIdFromQR(decodedText);
-                if (customId) {
-                    const studentCustomIdInput = document.getElementById('studentCustomId');
-                    if (studentCustomIdInput) {
-                        studentCustomIdInput.value = customId;
-                    }
-                    this.searchStudent(customId);
-                    this.stopQRScanner();
+                const studentQrCodeInput = document.getElementById('studentQrCode');
+                if (studentQrCodeInput) {
+                    studentQrCodeInput.value = decodedText.trim();
                 }
+                this.searchStudent(decodedText.trim());
+                this.stopQRScanner();
             }
 
-            extractCustomIdFromQR(qrText) {
-                const match = qrText.match(/SA\d+/);
-                return match ? match[0] : qrText;
-            }
-
-            searchStudent(customId = null) {
+            async searchStudent(qrCode = null) {
                 try {
-                    const searchId = customId || document.getElementById('studentCustomId')?.value.trim();
+                    const searchQrCode = qrCode || document.getElementById('studentQrCode')?.value.trim();
 
-                    if (!searchId) {
-                        this.showAlert('Please enter a student custom ID', 'warning');
+                    if (!searchQrCode) {
+                        this.showAlert('Please enter or scan a QR code', 'warning');
                         return;
                     }
 
                     this.showLoading(true);
                     this.hideStudentInfo();
 
-                    fetch(`/api/attendances/read-attendance?custom_id=${encodeURIComponent(searchId)}`)
-                        .then(response => {
-                            if (!response.ok) throw new Error('Student not found or API error');
-                            return response.json();
-                        })
-                        .then(data => {
-                            if (data.status === 'success') {
-                                this.studentId = data.student_id;
-                                this.currentStudentData = data;
-                                this.displayStudentInfo(data);
-                                this.displayOngoingClasses(data.data);
-                                this.showAlert('Student information loaded successfully', 'success');
-                            } else {
-                                throw new Error(data.message || 'No data found');
-                            }
-                        })
-                        .catch(error => {
-                            console.error('Search error:', error);
-                            this.showAlert('Error: ' + error.message, 'danger');
-                        })
-                        .finally(() => {
-                            this.showLoading(false);
-                        });
+                    const url = `/api/attendances/read-attendance?qr_code=${encodeURIComponent(searchQrCode)}`;
+                    
+                    const response = await fetch(url, {
+                        method: 'GET',
+                        headers: {
+                            'Accept': 'application/json',
+                            'X-CSRF-TOKEN': this.csrfToken
+                        }
+                    });
+
+                    const data = await response.json();
+
+                    if (!response.ok) {
+                        throw new Error(data.message || 'Failed to fetch student information');
+                    }
+
+                    if (data.status === 'success') {
+                        this.studentId = data.student_id;
+                        this.currentStudentData = data;
+                        this.displayStudentInfo(data);
+                        this.displayOngoingClasses(data.data);
+                        this.showAlert('Student information loaded successfully', 'success');
+                    } else {
+                        throw new Error(data.message || 'No data found');
+                    }
+
                 } catch (error) {
-                    console.error('Error in searchStudent:', error);
+                    console.error('Search error:', error);
                     this.showAlert('Error: ' + error.message, 'danger');
+                } finally {
                     this.showLoading(false);
                 }
             }
 
             displayStudentInfo(data) {
-                const student = data.data[0]?.student || null;
-                const paymentInfo = data.data[0]?.payment_info || null;
-                const tuteInfo = data.data[0]?.tute_info || null;
-                const attendanceInfo = data.data[0]?.attendance_info || null;
+                if (!data.data || data.data.length === 0) return;
+
+                const firstClass = data.data[0];
+                const student = firstClass.student;
                 
                 if (!student) return;
 
                 const studentDetails = document.getElementById('studentDetails');
                 if (!studentDetails) return;
 
-                const guardianMobile = student.guardian_mobile || 'Not available';
+                const qrCode = document.getElementById('studentQrCode')?.value || '';
+                const isTemporary = qrCode.startsWith('TMP');
                 
-                // Format payment info
-                let paymentHTML = '';
-                if (paymentInfo) {
-                    const paymentStatus = paymentInfo.payment_status ? 
-                        `<span class="badge bg-success info-badge">Paid</span>` : 
-                        `<span class="badge bg-danger info-badge">Pending</span>`;
-                    
-                    paymentHTML = `
-                        <div class="info-item payment-info d-flex align-items-center mb-1">
-                            <i class="fas fa-money-bill-wave fa-xs me-2 text-primary"></i>
-                            <div class="flex-grow-1">
-                                <small class="text-muted d-block">Last Payment</small>
-                                <div class="d-flex justify-content-between align-items-center">
-                                    <span class="small fw-semibold">Rs. ${paymentInfo.last_payment_amount || 0}</span>
-                                    ${paymentStatus}
-                                </div>
+                const qrTypeBadge = isTemporary ? 
+                    '<span class="qr-type-badge temp-qr"><i class="fas fa-clock me-1"></i>Temporary QR</span>' : 
+                    '<span class="qr-type-badge perm-qr"><i class="fas fa-check-circle me-1"></i>Permanent QR</span>';
+
+                const paymentInfo = firstClass.payment_info;
+                const paymentHTML = paymentInfo ? `
+                    <div class="info-item payment-info d-flex align-items-center mb-2">
+                        <i class="fas fa-money-bill-wave fa-sm me-2 text-primary"></i>
+                        <div class="flex-grow-1">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <small class="text-muted">Last Payment</small>
+                                <span class="badge ${paymentInfo.payment_status ? 'bg-success' : 'bg-danger'} info-badge">
+                                    ${paymentInfo.payment_status ? 'Paid' : 'Pending'}
+                                </span>
+                            </div>
+                            <div class="d-flex justify-content-between align-items-center">
+                                <span class="fw-bold">Rs. ${paymentInfo.last_payment_amount || 0}</span>
                                 <small class="text-muted">${paymentInfo.last_payment_date || 'No payment'}</small>
                             </div>
                         </div>
-                    `;
-                }
+                    </div>
+                ` : '';
 
-                // Format tute info
-                let tuteHTML = '';
-                if (tuteInfo) {
-                    const tuteStatus = tuteInfo.has_tute_for_this_month ? 
-                        `<span class="badge bg-success info-badge">✓</span>` : 
-                        `<span class="badge bg-warning text-dark info-badge">✗</span>`;
-                    
-                    tuteHTML = `
-                        <div class="info-item tute-info d-flex align-items-center mb-1">
-                            <i class="fas fa-book fa-xs me-2 text-purple"></i>
-                            <div class="flex-grow-1">
-                                <small class="text-muted d-block">Tute Status</small>
-                                <div class="d-flex justify-content-between align-items-center">
-                                    <span class="small fw-semibold">${tuteInfo.current_month}</span>
-                                    ${tuteStatus}
-                                </div>
+                const tuteInfo = firstClass.tute_info;
+                const tuteHTML = tuteInfo ? `
+                    <div class="info-item tute-info d-flex align-items-center mb-2">
+                        <i class="fas fa-book fa-sm me-2 text-purple"></i>
+                        <div class="flex-grow-1">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <small class="text-muted">Tute Status</small>
+                                <span class="badge ${tuteInfo.has_tute_for_this_month ? 'bg-success' : 'bg-warning'} info-badge">
+                                    ${tuteInfo.has_tute_for_this_month ? '✓ Received' : '✗ Not Received'}
+                                </span>
+                            </div>
+                            <small class="text-muted">${tuteInfo.current_month}</small>
+                        </div>
+                    </div>
+                ` : '';
+
+                const attendanceInfo = firstClass.attendance_info;
+                const attendanceHTML = attendanceInfo ? `
+                    <div class="info-item attendance-info d-flex align-items-center">
+                        <i class="fas fa-calendar-check fa-sm me-2 text-success"></i>
+                        <div class="flex-grow-1">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <small class="text-muted">Attendance</small>
+                                <span class="badge bg-info info-badge">${attendanceInfo.current_month}</span>
+                            </div>
+                            <div class="d-flex justify-content-between align-items-center">
+                                <span class="fw-bold">${attendanceInfo.attendance_count_this_month_total || 0} Classes</span>
+                                <small class="text-muted">this month</small>
                             </div>
                         </div>
-                    `;
-                }
-
-                // Format attendance info
-                let attendanceHTML = '';
-                if (attendanceInfo) {
-                    attendanceHTML = `
-                        <div class="info-item attendance-info d-flex align-items-center">
-                            <i class="fas fa-calendar-check fa-xs me-2 text-success"></i>
-                            <div class="flex-grow-1">
-                                <small class="text-muted d-block">Attendance This Month</small>
-                                <div class="d-flex justify-content-between align-items-center">
-                                    <span class="small fw-semibold">${attendanceInfo.attendance_count_this_month_total || 0} Classes</span>
-                                    <span class="badge bg-info info-badge">${attendanceInfo.current_month}</span>
-                                </div>
-                            </div>
-                        </div>
-                    `;
-                }
+                    </div>
+                ` : '';
 
                 studentDetails.innerHTML = `
-                    <div class="col-md-2 text-center">
-                        <img src="${student.img_url}" alt="Student Photo" 
+                    <div class="col-lg-3 text-center">
+                        <img src="${student.img_url || '/uploads/logo/logo.png'}" alt="Student Photo" 
                              class="img-thumbnail rounded-circle avatar-sm"
                              onerror="this.src='/uploads/logo/logo.png'">
                     </div>
-                    <div class="col-md-5">
-                        <h6 class="mb-1 fw-bold">${student.first_name} ${student.last_name}</h6>
-                        <p class="mb-1 small"><strong>Student ID:</strong> ${student.custom_id}</p>
-                        <p class="mb-2 small"><strong>Guardian Mobile:</strong> ${guardianMobile}</p>
-                        ${paymentHTML}
-                    </div>
-                    <div class="col-md-5">
-                        <p class="mb-1 small"><strong>Status:</strong> 
-                            <span class="badge bg-success">Active</span>
-                        </p>
-                        <p class="mb-3 small"><strong>Available Classes:</strong> 
-                            <span class="badge bg-info">${data.data.length}</span>
-                        </p>
-                        ${tuteHTML}
-                        ${attendanceHTML}
+                    <div class="col-lg-9">
+                        <div class="d-flex justify-content-between align-items-start mb-2">
+                            <h5 class="fw-bold mb-0">${student.last_name}</h5>
+                            ${qrTypeBadge}
+                        </div>
+                        <div class="row g-2 mb-2">
+                            <div class="col-6">
+                                <small class="text-muted d-block">Student ID</small>
+                                <span class="fw-semibold">${student.custom_id}</span>
+                            </div>
+                            <div class="col-6">
+                                <small class="text-muted d-block">Guardian Mobile</small>
+                                <span class="fw-semibold">${student.guardian_mobile || 'Not available'}</span>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-12">
+                                ${paymentHTML}
+                                ${tuteHTML}
+                                ${attendanceHTML}
+                            </div>
+                        </div>
                     </div>
                 `;
 
@@ -660,62 +832,55 @@
 
                 let html = '';
 
-                classesData.forEach((classData, index) => {
+                classesData.forEach((classData) => {
                     const ongoingClass = classData.ongoing_class;
-                    const studentStatus = classData.studentStudentStudentClass.student_class_status;
+                    const studentStatus = classData.studentStudentStudentClass?.student_class_status;
                     const attendanceInfo = classData.attendance_info || {};
+                    const tuteInfo = classData.tute_info || {};
 
                     if (!ongoingClass) return;
 
-                    const canMarkAttendance = studentStatus;
-                    const currentTime = ongoingClass.current_time || new Date().toLocaleTimeString('en-US', {
-                        hour: '2-digit',
-                        minute: '2-digit',
-                        hour12: true
-                    });
-
+                    const canMarkAttendance = studentStatus == 1;
                     const startTime = ongoingClass.start_time;
                     const endTime = ongoingClass.end_time;
-
-                    // Calculate 1 hour before
-                    const startTimeHour = parseInt(startTime.split(':')[0]);
-                    const isPM = startTime.includes('PM');
-                    let oneHourBeforeHour = startTimeHour - 1;
-                    if (oneHourBeforeHour <= 0) {
-                        oneHourBeforeHour = 12;
-                    }
-                    const oneHourBeforeTime = `${oneHourBeforeHour}:${startTime.split(':')[1].split(' ')[0]} ${isPM ? 'PM' : 'AM'}`;
-
-                    // Attendance count for this class
+                    
+                    const startTimeFormatted = this.formatTime(startTime);
+                    const endTimeFormatted = this.formatTime(endTime);
+                    const oneHourBefore = this.getOneHourBefore(startTime);
                     const classAttendanceCount = attendanceInfo.attendance_count_for_this_class || 0;
+                    const hasTuteForClass = tuteInfo.has_tute_for_this_month || false;
 
                     html += `
-                        <div class="col-xl-4 col-lg-4 col-md-6 col-sm-6">
-                            <div class="class-card card h-100">
-                                <div class="card-header bg-info text-white py-2 position-relative">
-                                    ${ongoingClass.is_ongoing == 1 ?
-                            `<span class="ongoing-badge badge bg-danger">
-                                <i class="fas fa-circle fa-xs me-1"></i>LIVE
-                            </span>` : ''
-                        }
-                                    <h6 class="card-title mb-0 fw-bold">${classData.category_name}</h6>
-                                    <small class="opacity-75">${classData.student_class_name}</small>
+                        <div class="col-xl-4 col-lg-6 col-md-6">
+                            <div class="class-card card h-100 border-0 shadow-sm">
+                                <div class="card-header bg-white border-0 pt-3 px-3">
+                                    <div class="d-flex justify-content-between align-items-start">
+                                        <div>
+                                            <h6 class="fw-bold mb-0">${classData.category_name}</h6>
+                                            <small class="text-muted">${classData.student_class_name}</small>
+                                        </div>
+                                        ${ongoingClass.is_ongoing == 1 ?
+                                            `<span class="ongoing-badge badge bg-danger rounded-pill">
+                                                <i class="fas fa-circle fa-xs me-1"></i>LIVE
+                                            </span>` : ''
+                                        }
+                                    </div>
                                 </div>
 
-                                <div class="card-body p-2">
+                                <div class="card-body p-3">
                                     <div class="attendance-time-window">
-                                        <div class="d-flex justify-content-between align-items-center mb-1">
+                                        <div class="d-flex justify-content-between mb-1">
                                             <small class="text-muted">Attendance Window</small>
-                                            <small class="text-muted">Now: ${currentTime}</small>
+                                            <small class="text-muted">Now: ${ongoingClass.current_time}</small>
                                         </div>
                                         <div class="d-flex justify-content-between align-items-center">
                                             <div class="text-center">
-                                                <div class="fw-bold small">${oneHourBeforeTime}</div>
+                                                <div class="fw-bold">${oneHourBefore}</div>
                                                 <small class="text-muted">Start</small>
                                             </div>
                                             <i class="fas fa-arrow-right text-muted"></i>
                                             <div class="text-center">
-                                                <div class="fw-bold small">${endTime}</div>
+                                                <div class="fw-bold">${endTimeFormatted}</div>
                                                 <small class="text-muted">End</small>
                                             </div>
                                         </div>
@@ -723,78 +888,65 @@
 
                                     <div class="row g-2 mb-2">
                                         <div class="col-6">
-                                            <div class="time-badge badge text-center">
+                                            <div class="time-badge text-center">
                                                 <i class="fas fa-clock me-1"></i>
-                                                ${startTime}
+                                                ${startTimeFormatted} - ${endTimeFormatted}
                                             </div>
                                         </div>
                                         <div class="col-6">
-                                            <div class="date-badge badge text-center">
+                                            <div class="date-badge text-center">
                                                 <i class="fas fa-calendar me-1"></i>
                                                 ${ongoingClass.date}
                                             </div>
                                         </div>
                                     </div>
 
-                                    <!-- Class Attendance Count -->
-                                    <div class="info-item attendance-info mb-2">
-                                        <div class="d-flex justify-content-between align-items-center">
-                                            <div>
-                                                <i class="fas fa-calendar-check fa-xs me-1"></i>
-                                                <small class="text-muted">Attendance this month:</small>
-                                            </div>
-                                            <span class="badge bg-primary info-badge">${classAttendanceCount} classes</span>
-                                        </div>
-                                    </div>
-
-                                    <div class="class-info mb-2">
-                                        <div class="detail-item d-flex align-items-center">
-                                            <div class="icon-wrapper bg-info bg-opacity-10 rounded-circle me-2">
-                                                <i class="fas fa-door-open text-info fa-xs"></i>
-                                            </div>
-                                            <div class="flex-grow-1">
-                                                <small class="text-muted d-block">Hall</small>
-                                                <span class="fw-semibold small">${ongoingClass.class_hall_name || 'Hall #' + ongoingClass.class_hall_id}</span>
+                                    <div class="row g-1 mb-2">
+                                        <div class="col-6">
+                                            <div class="info-item attendance-info text-center p-2">
+                                                <small class="text-muted d-block">Attendance</small>
+                                                <span class="fw-bold">${classAttendanceCount}</span>
+                                                <small class="text-muted">this month</small>
                                             </div>
                                         </div>
-
-                                        <div class="detail-item d-flex align-items-center">
-                                            <div class="icon-wrapper ${canMarkAttendance ? 'bg-success bg-opacity-10' : 'bg-danger bg-opacity-10'} rounded-circle me-2">
-                                                <i class="fas ${canMarkAttendance ? 'fa-user-check text-success' : 'fa-user-times text-danger'} fa-xs"></i>
-                                            </div>
-                                            <div class="flex-grow-1">
-                                                <small class="text-muted d-block">Status</small>
-                                                <span class="fw-semibold small ${canMarkAttendance ? 'text-success' : 'text-danger'}">
-                                                    ${canMarkAttendance ? 'Active' : 'Inactive'}
+                                        <div class="col-6">
+                                            <div class="info-item tute-info text-center p-2">
+                                                <small class="text-muted d-block">Tute</small>
+                                                <span class="badge ${hasTuteForClass ? 'bg-success' : 'bg-warning'} rounded-pill">
+                                                    ${hasTuteForClass ? '✓' : '✗'}
                                                 </span>
                                             </div>
                                         </div>
                                     </div>
 
-                                    <div class="mt-2">
-                                        <button class="btn ${canMarkAttendance ? 'btn-success' : 'btn-secondary'} attendance-btn btn-sm" 
-                                                data-student-id="${classData.student.id}"
-                                                data-student-class-id="${classData.studentStudentStudentClass.student_student_student_class_id}"
-                                                data-ongoing-class-id="${ongoingClass.id}"
-                                                data-student-name="${classData.student.first_name} ${classData.student.last_name}"
-                                                data-class-name="${classData.student_class_name}"
-                                                data-class-time="${ongoingClass.start_time} - ${ongoingClass.end_time}"
-                                                data-class-date="${ongoingClass.date}"
-                                                data-student-status="${studentStatus}"
-                                                data-guardian-mobile="${classData.student.guardian_mobile || ''}"
-                                                data-attendance-count="${classAttendanceCount}"
-                                                ${!canMarkAttendance ? 'disabled' : ''}>
-                                            <i class="fas ${canMarkAttendance ? 'fa-user-check' : 'fa-ban'} me-1"></i>
-                                            ${canMarkAttendance ? 'Mark Attendance' : 'Disabled'}
-                                        </button>
-
-                                        ${!canMarkAttendance ?
-                            `<div class="attendance-disabled-message mt-1">
-                                <i class="fas fa-exclamation-triangle text-warning fa-xs me-1"></i>
-                                <small>Student enrollment is inactive</small>
-                            </div>` : ''
-                        }
+                                    <div class="class-info mb-2">
+                                        <div class="d-flex align-items-center mb-1">
+                                            <i class="fas fa-door-open text-info me-2"></i>
+                                            <small class="fw-semibold">${ongoingClass.class_hall_name || 'Hall #' + ongoingClass.class_hall_id}</small>
+                                        </div>
+                                        <div class="d-flex align-items-center">
+                                            <i class="fas ${canMarkAttendance ? 'fa-user-check text-success' : 'fa-user-times text-danger'} me-2"></i>
+                                            <small class="fw-semibold ${canMarkAttendance ? 'text-success' : 'text-danger'}">
+                                                ${canMarkAttendance ? 'Active Enrollment' : 'Inactive Enrollment'}
+                                            </small>
+                                        </div>
                                     </div>
+
+                                    <button class="btn ${canMarkAttendance ? 'btn-success' : 'btn-secondary'} attendance-btn w-100 mt-2" 
+                                            data-student-id="${classData.student.id}"
+                                            data-student-class-id="${classData.studentStudentStudentClass?.student_student_student_class_id}"
+                                            data-attendance-id="${ongoingClass.id}"
+                                            data-class-category-id="${ongoingClass.class_category_has_student_class_id}"
+                                            data-student-name="${classData.student.last_name}"
+                                            data-class-name="${classData.student_class_name}"
+                                            data-class-time="${startTimeFormatted} - ${endTimeFormatted}"
+                                            data-class-date="${ongoingClass.date}"
+                                            data-guardian-mobile="${classData.student.guardian_mobile || ''}"
+                                            data-has-tute="${hasTuteForClass}"
+                                            ${!canMarkAttendance ? 'disabled' : ''}>
+                                        <i class="fas ${canMarkAttendance ? 'fa-user-check' : 'fa-ban'} me-2"></i>
+                                        ${canMarkAttendance ? 'Mark Attendance' : 'Disabled'}
+                                    </button>
                                 </div>
                             </div>
                         </div>
@@ -808,97 +960,110 @@
                 this.setupAttendanceButtonListeners();
             }
 
+            formatTime(timeString) {
+                if (!timeString) return '';
+                if (timeString.includes(':')) {
+                    const [hours, minutes] = timeString.split(':');
+                    const hour = parseInt(hours);
+                    const ampm = hour >= 12 ? 'PM' : 'AM';
+                    const hour12 = hour % 12 || 12;
+                    return `${hour12}:${minutes.substring(0,2)} ${ampm}`;
+                }
+                return timeString;
+            }
+
+            getOneHourBefore(timeString) {
+                if (!timeString) return '';
+                
+                let hour, minute;
+                
+                if (timeString.includes(':')) {
+                    const parts = timeString.split(':');
+                    hour = parseInt(parts[0]);
+                    minute = parts[1].substring(0, 2);
+                    hour -= 1;
+                    if (hour < 0) hour = 23;
+                    const ampm = hour >= 12 ? 'PM' : 'AM';
+                    const hour12 = hour % 12 || 12;
+                    return `${hour12}:${minute} ${ampm}`;
+                }
+                
+                return timeString;
+            }
+
             setupAttendanceButtonListeners() {
                 document.querySelectorAll('.attendance-btn:not(:disabled)').forEach(btn => {
                     btn.addEventListener('click', (e) => {
                         const studentId = e.currentTarget.getAttribute('data-student-id');
                         const studentClassId = e.currentTarget.getAttribute('data-student-class-id');
-                        const ongoingClassId = e.currentTarget.getAttribute('data-ongoing-class-id');
+                        const attendanceId = e.currentTarget.getAttribute('data-attendance-id');
+                        const classCategoryId = e.currentTarget.getAttribute('data-class-category-id');
                         const studentName = e.currentTarget.getAttribute('data-student-name');
                         const className = e.currentTarget.getAttribute('data-class-name');
                         const classTime = e.currentTarget.getAttribute('data-class-time');
                         const classDate = e.currentTarget.getAttribute('data-class-date');
-                        const studentStatus = e.currentTarget.getAttribute('data-student-status');
                         const guardianMobile = e.currentTarget.getAttribute('data-guardian-mobile');
-                        const attendanceCount = e.currentTarget.getAttribute('data-attendance-count');
+                        const hasTute = e.currentTarget.getAttribute('data-has-tute') === 'true';
 
                         this.openAttendanceModal(
                             studentId,
                             studentClassId,
-                            ongoingClassId,
+                            attendanceId,
+                            classCategoryId,
                             studentName,
                             className,
                             classTime,
                             classDate,
-                            studentStatus,
                             guardianMobile,
-                            attendanceCount
+                            hasTute
                         );
                     });
                 });
             }
 
-            openAttendanceModal(studentId, studentClassId, ongoingClassId, studentName, className, classTime, classDate, studentStatus, guardianMobile, attendanceCount) {
-                // Set modal values
-                const attendanceStudentId = document.getElementById('attendance_student_id');
-                const attendanceStudentClassId = document.getElementById('attendance_student_class_id');
-                const attendanceClassId = document.getElementById('attendance_class_id');
-                const attendanceGuardianMobile = document.getElementById('attendance_guardian_mobile');
-                const attendanceStudentName = document.getElementById('attendance_student_name');
-                const attendanceClassName = document.getElementById('attendance_class_name');
-                const attendanceClassTime = document.getElementById('attendance_class_time');
-                const attendanceAttendanceCount = document.getElementById('attendance_attendance_count');
-
-                if (attendanceStudentId) attendanceStudentId.value = studentId;
-                if (attendanceStudentClassId) attendanceStudentClassId.value = studentClassId;
-                if (attendanceClassId) attendanceClassId.value = ongoingClassId;
-                if (attendanceGuardianMobile) attendanceGuardianMobile.value = guardianMobile;
-                if (attendanceStudentName) attendanceStudentName.value = studentName;
-                if (attendanceClassName) attendanceClassName.value = className;
-                if (attendanceClassTime) attendanceClassTime.value = classTime;
-                if (attendanceAttendanceCount) attendanceAttendanceCount.value = attendanceCount;
-
-                // Set display information
-                const modalStudentName = document.getElementById('modalStudentName');
-                const modalClassName = document.getElementById('modalClassName');
-                const modalClassTime = document.getElementById('modalClassTime');
-                const modalClassDate = document.getElementById('modalClassDate');
-                const statusBadge = document.getElementById('modalStudentStatusBadge');
-
-                if (modalStudentName) modalStudentName.textContent = studentName;
-                if (modalClassName) modalClassName.textContent = className;
-                if (modalClassTime) modalClassTime.textContent = classTime;
-                if (modalClassDate) modalClassDate.textContent = classDate;
-
-                if (statusBadge) {
-                    if (studentStatus == 1) {
-                        statusBadge.className = 'badge badge-sm status-badge-active';
-                        statusBadge.textContent = 'Active';
+            openAttendanceModal(studentId, studentClassId, attendanceId, classCategoryId, studentName, className, classTime, classDate, guardianMobile, hasTute) {
+                document.getElementById('attendance_student_id').value = studentId || '';
+                document.getElementById('attendance_student_class_id').value = studentClassId || '';
+                document.getElementById('attendance_attendance_id').value = attendanceId || '';
+                document.getElementById('attendance_class_category_id').value = classCategoryId || '';
+                document.getElementById('attendance_guardian_mobile').value = guardianMobile || '';
+                
+                const markTuteCheckbox = document.getElementById('markTuteCheckbox');
+                const attendanceTute = document.getElementById('attendance_tute');
+                
+                if (markTuteCheckbox) {
+                    if (hasTute) {
+                        markTuteCheckbox.checked = false;
+                        markTuteCheckbox.disabled = true;
+                        markTuteCheckbox.parentElement.classList.add('text-muted');
                     } else {
-                        statusBadge.className = 'badge badge-sm status-badge-inactive';
-                        statusBadge.textContent = 'Inactive';
+                        markTuteCheckbox.checked = false;
+                        markTuteCheckbox.disabled = false;
+                        markTuteCheckbox.parentElement.classList.remove('text-muted');
                     }
                 }
+                
+                if (attendanceTute) {
+                    attendanceTute.value = '0';
+                }
 
-                // Show/hide SMS notification info
+                document.getElementById('modalStudentName').textContent = studentName || '-';
+                document.getElementById('modalClassName').textContent = className || '-';
+                document.getElementById('modalClassTime').textContent = classTime || '-';
+                document.getElementById('modalClassDate').textContent = classDate || '-';
+
                 const smsInfo = document.getElementById('smsNotificationInfo');
                 const smsStatusText = document.getElementById('smsStatusText');
 
                 if (smsInfo && smsStatusText) {
-                    if (this.smsEnabled && guardianMobile && guardianMobile !== 'Not available') {
+                    if (guardianMobile && guardianMobile.length >= 10) {
                         smsInfo.style.display = 'block';
-                        smsInfo.className = 'alert alert-info alert-sm py-2 mb-2';
                         smsStatusText.textContent = `SMS will be sent to ${guardianMobile}`;
-                    } else if (this.smsEnabled) {
-                        smsInfo.style.display = 'block';
-                        smsInfo.className = 'alert alert-warning alert-sm py-2 mb-2';
-                        smsStatusText.textContent = 'SMS enabled but no guardian mobile';
                     } else {
                         smsInfo.style.display = 'none';
                     }
                 }
 
-                // Show modal
                 const modalElement = document.getElementById('attendanceModal');
                 if (modalElement) {
                     const modal = new bootstrap.Modal(modalElement);
@@ -913,23 +1078,25 @@
 
                 if (!btn) return;
 
-                // Disable button and show loading
                 const originalText = btn.innerHTML;
                 btn.disabled = true;
-                btn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>Processing...';
+                btn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Processing...';
 
                 try {
-                    // Use correct field names for backend
                     const formData = {
                         student_id: document.getElementById('attendance_student_id')?.value,
                         student_student_student_classes_id: document.getElementById('attendance_student_class_id')?.value,
-                        attendance_id: document.getElementById('attendance_class_id')?.value,
-                        _token: this.csrfToken
+                        attendance_id: document.getElementById('attendance_attendance_id')?.value,
+                        class_category_has_student_class_id: document.getElementById('attendance_class_category_id')?.value,
+                        guardian_mobile: document.getElementById('attendance_guardian_mobile')?.value,
+                        tute: document.getElementById('attendance_tute')?.value === '1'
                     };
 
-                    console.log('Sending attendance data:', formData);
+                    if (!formData.student_id || !formData.student_student_student_classes_id || !formData.attendance_id) {
+                        throw new Error('Missing required attendance data');
+                    }
 
-                    const response = await fetch('/api/attendances', {
+                    const response = await fetch('/api/attendances/', {
                         method: 'POST',
                         headers: {
                             'Content-Type': 'application/json',
@@ -940,9 +1107,13 @@
                     });
 
                     const data = await response.json();
-                    console.log('Response:', data);
 
                     if (!response.ok) {
+                        if (response.status === 409) {
+                            this.showAlert('⚠️ ' + data.message, 'warning');
+                            if (modal) modal.hide();
+                            return;
+                        }
                         if (response.status === 422) {
                             const errors = data.errors || {};
                             const errorMessages = Object.values(errors).flat().join(', ');
@@ -951,40 +1122,19 @@
                         throw new Error(data.message || `HTTP error! status: ${response.status}`);
                     }
 
-                    if (data.status === 'success' || data.status === 'duplicate') {
-                        if (data.status === 'success') {
-                            this.showAlert('✅ Attendance marked successfully!', 'success');
-
-                            // Send SMS if enabled
-                            if (this.smsEnabled) {
-                                const guardianMobile = document.getElementById('attendance_guardian_mobile')?.value;
-                                const studentName = document.getElementById('attendance_student_name')?.value;
-                                const className = document.getElementById('attendance_class_name')?.value;
-                                const classTime = document.getElementById('attendance_class_time')?.value;
-
-                                if (guardianMobile && guardianMobile !== 'Not available' && guardianMobile.length >= 10) {
-                                    await this.sendSMSNotification(guardianMobile, studentName, className, classTime);
-                                }
-                            }
-
-                            // Close modal
-                            if (modal) {
-                                modal.hide();
-                            }
-
-                            // Refresh student data
-                            setTimeout(() => {
-                                const customId = document.getElementById('studentCustomId')?.value;
-                                if (customId) {
-                                    this.searchStudent(customId);
-                                }
-                            }, 1500);
-                        } else {
-                            this.showAlert('⚠️ ' + data.message, 'warning');
-                            if (modal) {
-                                modal.hide();
-                            }
+                    if (data.status === 'success') {
+                        let message = '✅ Attendance marked successfully!';
+                        if (data.tute_marked) {
+                            message += ' Tute marked for this month.';
                         }
+                        this.showAlert(message, 'success');
+
+                        if (modal) modal.hide();
+
+                        setTimeout(() => {
+                            const qrCode = document.getElementById('studentQrCode')?.value;
+                            if (qrCode) this.searchStudent(qrCode);
+                        }, 1500);
                     } else {
                         throw new Error(data.message || 'Attendance marking failed.');
                     }
@@ -995,43 +1145,13 @@
                     if (error.message.includes('duplicate') || error.message.includes('Duplicate')) {
                         this.showAlert('⚠️ Attendance already marked for this class!', 'warning');
                     } else if (error.message.includes('validation') || error.message.includes('Validation')) {
-                        this.showAlert(`❌ Validation error: ${error.message.replace('Validation failed: ', '')}`, 'danger');
-                    } else if (error.message.includes('Something went wrong')) {
-                        this.showAlert('❌ Server error. Please try again.', 'danger');
+                        this.showAlert(`❌ ${error.message}`, 'danger');
                     } else {
                         this.showAlert('❌ Error: ' + error.message, 'danger');
                     }
                 } finally {
                     btn.disabled = false;
                     btn.innerHTML = originalText;
-                }
-            }
-
-            async sendSMSNotification(mobile, studentName, className, classTime) {
-                try {
-                    const message = `Dear Parent, ${studentName} has attended ${className} class at ${classTime}. Thank you.`;
-
-                    const smsData = {
-                        mobile: mobile,
-                        message: message
-                    };
-
-                    const response = await fetch('/api/send-sms', {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                            'Accept': 'application/json'
-                        },
-                        body: JSON.stringify(smsData)
-                    });
-
-                    const data = await response.json();
-
-                    if (response.ok && data.status === 'success') {
-                        this.showAlert('📱 SMS sent to guardian', 'info');
-                    }
-                } catch (error) {
-                    console.error('SMS sending error:', error);
                 }
             }
 
@@ -1077,14 +1197,11 @@
 
                 setTimeout(() => {
                     const alert = document.getElementById(alertId);
-                    if (alert) {
-                        alert.remove();
-                    }
+                    if (alert) alert.remove();
                 }, 5000);
             }
         }
 
-        // Initialize the attendance system when DOM is loaded
         document.addEventListener('DOMContentLoaded', () => {
             window.attendanceSystem = new AttendanceSystem();
         });

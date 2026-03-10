@@ -110,6 +110,7 @@
                         @csrf
                         <input type="hidden" id="payment_student_id" name="student_id">
                         <input type="hidden" id="payment_student_class_id" name="student_student_student_classes_id">
+                        <input type="hidden" id="payment_guardian_mobile" name="guardian_mobile">
 
                         <div class="row">
                             <div class="col-md-6">
@@ -142,7 +143,7 @@
                                         <div class="mb-3">
                                             <label for="payment_date" class="form-label">Payment Date</label>
                                             <input type="date" class="form-control" id="payment_date" name="payment_date"
-                                                value="{{ date('Y-m-d') }}" disabled required>
+                                                value="{{ date('Y-m-d') }}" required>
                                         </div>
 
                                         <div class="mb-3">
@@ -262,10 +263,12 @@
             transition: all 0.3s ease;
             background: white;
             overflow: hidden;
+            margin-bottom: 20px;
         }
 
         .class-card:hover {
             box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+            transform: translateY(-5px);
         }
 
         .hover-lift:hover {
@@ -325,6 +328,9 @@
 
         .fee-section {
             border-left: 4px solid #28a745;
+            background: #f8f9fa;
+            padding: 10px;
+            border-radius: 5px;
         }
 
         .btn-pay,
@@ -341,7 +347,10 @@
 
         .free-card-section {
             transition: all 0.3s ease;
-            border-style: dashed !important;
+            border: 2px dashed #28a745 !important;
+            padding: 15px;
+            border-radius: 10px;
+            text-align: center;
         }
 
         .free-card-section:hover {
@@ -445,7 +454,7 @@
                 const currentDate = new Date();
                 document.getElementById('payment_month').value = String(currentDate.getMonth() + 1).padStart(2, '0');
                 document.getElementById('payment_year').value = currentDate.getFullYear();
-                document.getElementById('payment_date').value = currentDate.toISOString().split('T')[0]; // Set today's date
+                document.getElementById('payment_date').value = currentDate.toISOString().split('T')[0];
             }
 
             async toggleQRScanner() {
@@ -525,7 +534,7 @@
                 this.showLoading(true);
                 this.hideStudentInfo();
 
-                fetch(`/api/read-qr-code/student-id?custom_id=${encodeURIComponent(searchId)}`)
+                fetch(`/api/read-qr-code/student-id?qr_code=${encodeURIComponent(searchId)}`)
                     .then(response => {
                         if (!response.ok) throw new Error('Student not found');
                         return response.json();
@@ -572,7 +581,7 @@
                              onerror="this.src='/uploads/logo/logo.png'">
                     </div>
                     <div class="col-md-5">
-                        <h5>${student.first_name} ${student.last_name}</h5>
+                        <h5>${student.last_name}</h5>
                         <p class="mb-1"><strong>Student ID:</strong> ${student.student_custom_id}</p>
                         <p class="mb-1"><strong>Guardian Mobile:</strong> ${student.guardian_mobile || 'N/A'}</p>
                         <p class="mb-1"><strong>Grade:</strong> ${studentData.student_class.grade.grade_name}</p>
@@ -581,11 +590,6 @@
                         <p class="mb-0"><strong>Status:</strong> 
                             <span class="badge ${student.student_status == 1 ? 'bg-success' : 'bg-danger'}">
                                 ${student.student_status == 1 ? 'Active' : 'Inactive'}
-                            </span>
-                        </p>
-                        <p class="mb-0"><strong>Free Card:</strong> 
-                            <span class="badge ${studentData.is_free_card == 1 ? 'bg-success' : 'bg-secondary'}">
-                                ${studentData.is_free_card == 1 ? 'Yes' : 'No'}
                             </span>
                         </p>
                     </div>
@@ -601,8 +605,7 @@
                 classesData.forEach(classData => {
                     const isFreeCard = classData.is_free_card == 1;
                     const classInactive = classData.status == 0;
-                    const classFee = classData.classCategoryHasStudentClass?.class_fee ||
-                        classData.class_category_has_student_class?.fees || '0';
+                    const classFee = classData.classCategoryHasStudentClass?.class_fee;
 
                     const colors = ['primary', 'success', 'info', 'warning', 'danger', 'secondary'];
                     const colorIndex = classData.student_class.class_name.length % colors.length;
@@ -673,7 +676,7 @@
                                                     <small class="text-muted">Payments currently disabled</small>
                                                 </div>
                                                 <button class="btn btn-outline-secondary btn-view-previous w-100 py-2" 
-                                                        data-class-id="${classData.student_student_student_class_id}">
+                                                        onclick="paymentSystem.viewPaymentDetails('${this.studentId}', '${classData.student_student_student_class_id}')">
                                                     <i class="fas fa-history me-2"></i>View Previous Payments
                                                 </button>
                                             </div>
@@ -689,11 +692,12 @@
                                                         data-class-id="${classData.student_student_student_class_id}"
                                                         data-fee="${classFee}"
                                                         data-class-name="${classData.student_class.class_name}"
-                                                        data-grade="${classData.student_class.grade.grade_name}">
+                                                        data-grade="${classData.student_class.grade.grade_name}"
+                                                        data-guardian-mobile="${classData.student.guardian_mobile || ''}">
                                                     <i class="fas fa-credit-card me-2"></i>Pay Now
                                                 </button>
                                                 <button class="btn btn-outline-${themeColor} btn-view py-2" 
-                                                        data-class-id="${classData.student_student_student_class_id}">
+                                                        onclick="paymentSystem.viewPaymentDetails('${this.studentId}', '${classData.student_student_student_class_id}')">
                                                     <i class="fas fa-eye me-2"></i>View Details
                                                 </button>
                                             </div>
@@ -709,40 +713,31 @@
                 classesList.innerHTML = html;
                 document.getElementById('classesCard').style.display = 'block';
 
-                // Add event listeners to buttons
-                this.setupClassButtonListeners();
-            }
-
-            setupClassButtonListeners() {
+                // Add event listeners to Pay Now buttons
                 document.querySelectorAll('.btn-pay').forEach(btn => {
                     btn.addEventListener('click', (e) => {
-                        const student_class_id = e.currentTarget.getAttribute('data-class-id');
-                        const fee = e.currentTarget.getAttribute('data-fee');
-                        const className = e.currentTarget.getAttribute('data-class-name');
-                        const grade = e.currentTarget.getAttribute('data-grade');
-                        this.openPaymentModal(student_class_id, fee, className, grade);
-                    });
-                });
-
-                document.querySelectorAll('.btn-view, .btn-view-previous').forEach(btn => {
-                    btn.addEventListener('click', (e) => {
-                        const student_class_id = e.currentTarget.getAttribute('data-class-id');
-                        this.viewPaymentDetails(this.studentId, student_class_id);
+                        e.preventDefault();
+                        const studentClassId = btn.getAttribute('data-class-id');
+                        const fee = btn.getAttribute('data-fee');
+                        const className = btn.getAttribute('data-class-name');
+                        const grade = btn.getAttribute('data-grade');
+                        const guardianMobile = btn.getAttribute('data-guardian-mobile');
+                        this.openPaymentModal(studentClassId, fee, className, grade, guardianMobile);
                     });
                 });
             }
 
-            openPaymentModal(student_class_id, fee, className, grade) {
-                // Set modal values
+            openPaymentModal(studentClassId, fee, className, grade, guardianMobile) {
+                // Set form values
                 document.getElementById('payment_student_id').value = this.studentId;
-                document.getElementById('payment_student_class_id').value = student_class_id;
+                document.getElementById('payment_student_class_id').value = studentClassId;
+                document.getElementById('payment_guardian_mobile').value = guardianMobile;
                 document.getElementById('payment_amount').value = fee;
                 document.getElementById('defaultFee').textContent = this.formatCurrency(fee);
 
                 // Set student and class info
-                document.getElementById('modalStudentName').textContent = 
-                    `${this.currentStudentData.student.first_name} ${this.currentStudentData.student.last_name}`;
-                document.getElementById('modalStudentId').textContent = this.currentStudentData.student.student_custom_id;
+                document.getElementById('modalStudentName').textContent = this.currentStudentData?.student?.last_name || '-';
+                document.getElementById('modalStudentId').textContent = this.currentStudentData?.student?.student_custom_id || '-';
                 document.getElementById('modalClassName').textContent = className;
                 document.getElementById('modalGrade').textContent = grade;
 
@@ -803,7 +798,6 @@
                 const modalElement = document.getElementById('paymentModal');
                 const modal = bootstrap.Modal.getInstance(modalElement);
 
-                // Disable button and show loading
                 const originalText = btn.innerHTML;
                 btn.disabled = true;
                 btn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Processing...';
@@ -815,22 +809,20 @@
                     const amount = parseFloat(document.getElementById('payment_amount').value);
                     const studentId = parseInt(document.getElementById('payment_student_id').value);
                     const studentClassId = parseInt(document.getElementById('payment_student_class_id').value);
+                    const guardianMobile = document.getElementById('payment_guardian_mobile').value;
 
-                    // Get className from modal (already displayed in modal)
-                    const className = document.getElementById('modalClassName').textContent;
-
-                    // Create payment_for in format "2025 Feb"
                     const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 
                                        'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
                     const paymentFor = `${year} ${monthNames[parseInt(month) - 1]}`;
 
                     const paymentData = {
-                        payment_date: paymentDate, // Actual payment date (today)
-                        payment_for: paymentFor, // Month payment is for (e.g., "2025 Feb")
-                        status: 1, // Always active for new payments
+                        payment_date: paymentDate,
+                        payment_for: paymentFor,
+                        status: 1,
                         amount: amount,
                         student_id: studentId,
-                        student_student_student_classes_id: studentClassId
+                        student_student_student_classes_id: studentClassId,
+                        guardian_mobile: guardianMobile
                     };
 
                     console.log('Sending payment data:', paymentData);
@@ -854,21 +846,13 @@
                     if (data.status === 'success') {
                         this.showAlert('✅ Payment processed successfully!', 'success');
 
-                        // Send SMS if enabled
-                        if (this.shouldSendSMS()) {
-                            await this.sendPaymentConfirmationSMS(paymentData, className);
-                        }
-
-                        // Close modal
                         if (modal) {
                             modal.hide();
                         }
 
-                        // Clear form and reset to current date
                         document.getElementById('paymentForm').reset();
                         this.setCurrentDate();
 
-                        // Refresh student data
                         setTimeout(() => {
                             if (this.currentStudentData && this.currentStudentData.student) {
                                 this.searchStudent(this.currentStudentData.student.student_custom_id);
@@ -887,126 +871,12 @@
                         if (modal) {
                             modal.hide();
                         }
-                    } else if (error.message.includes('validation')) {
-                        this.showAlert('❌ Validation error. Please check all fields.', 'danger');
-                        if (modal) {
-                            modal.hide();
-                        }
                     } else {
                         this.showAlert('❌ Payment error: ' + error.message, 'danger');
                     }
                 } finally {
                     btn.disabled = false;
                     btn.innerHTML = originalText;
-                }
-            }
-
-            shouldSendSMS() {
-                try {
-                    const savedSettings = localStorage.getItem('sms_settings');
-                    if (savedSettings) {
-                        const settings = JSON.parse(savedSettings);
-                        return settings.sms_enabled === true;
-                    }
-                    return false;
-                } catch (error) {
-                    console.error('Error accessing SMS settings:', error);
-                    return false;
-                }
-            }
-
-            async sendPaymentConfirmationSMS(paymentData, className) {
-                const student = this.currentStudentData.student;
-
-                if (!student.guardian_mobile || student.guardian_mobile.trim() === '') {
-                    console.warn('No guardian mobile number found');
-                    return;
-                }
-
-                const guardianMobile = this.formatPhoneTo94(student.guardian_mobile);
-                const phoneRegex = /^94[1-9][0-9]{8}$/;
-                
-                if (!phoneRegex.test(guardianMobile)) {
-                    console.warn('Invalid guardian mobile number:', student.guardian_mobile);
-                    return;
-                }
-
-                // Use payment_for (month/year) in SMS instead of payment_date
-                const message = this.getSmsTemplate(
-                    student.first_name,
-                    className,
-                    paymentData.amount,
-                    paymentData.payment_for // Use month/year like "2025 Feb"
-                );
-
-                if (message.length > 160) {
-                    console.warn('SMS message exceeds 160 characters');
-                }
-
-                const smsData = {
-                    mobile: guardianMobile, // check = "94768971213"
-                    message: message,
-                    student_id: student.student_id,
-                    student_name: `${student.first_name} ${student.last_name}`
-                };
-
-                try {
-                    const controller = new AbortController();
-                    const timeoutId = setTimeout(() => controller.abort(), 10000);
-
-                    const response = await fetch('/api/send-sms', {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                            'Accept': 'application/json',
-                            'X-CSRF-TOKEN': this.csrfToken
-                        },
-                        body: JSON.stringify(smsData),
-                        signal: controller.signal
-                    });
-
-                    clearTimeout(timeoutId);
-
-                    if (response.ok) {
-                        const data = await response.json();
-                        if (data.status === 'success') {
-                            console.log('✅ SMS sent successfully');
-                            this.showAlert('✅ Confirmation SMS sent to guardian.', 'success');
-                        } else {
-                            console.warn('SMS API returned warning:', data.message);
-                        }
-                    }
-                } catch (error) {
-                    console.error('❌ Error sending SMS:', error);
-                    // Don't show error to user - payment was successful
-                }
-            }
-
-            formatPhoneTo94(phoneNumber) {
-                if (!phoneNumber) return '';
-                let cleaned = phoneNumber.toString().replace(/\D/g, '');
-                if (cleaned.startsWith('0')) {
-                    return '94' + cleaned.substring(1);
-                } else if (cleaned.startsWith('+94')) {
-                    return '94' + cleaned.substring(3);
-                } else if (cleaned.startsWith('94')) {
-                    return cleaned;
-                } else {
-                    return '94' + cleaned;
-                }
-            }
-
-            getSmsTemplate(studentName, className, amount, paymentFor) {
-                try {
-                    const savedSettings = localStorage.getItem('sms_settings');
-                    const institute = savedSettings ? JSON.parse(savedSettings).institute_name : 'Success Education';
-                    const formattedAmount = this.formatCurrency(amount);
-
-                    // Use payment_for (month/year) instead of payment_date
-                    return `Dear Parent/Guardian, payment of LKR ${formattedAmount} has been made for ${studentName} at ${institute}.\nClass: ${className}\nMonth: ${paymentFor}\nThank you.`;
-                } catch (error) {
-                    console.error('Error generating SMS template:', error);
-                    return `Dear Parent/Guardian, payment of LKR ${amount} has been made for ${studentName}.\nClass: ${className}\nMonth: ${paymentFor}\nThank you.`;
                 }
             }
 
@@ -1019,7 +889,9 @@
             }
 
             viewPaymentDetails(student_id, student_class_id) {
-                window.location.href = `/student-payment/details/${student_id}/${student_class_id}`;
+                if (student_id && student_class_id) {
+                    window.location.href = `/student-payment/details/${student_id}/${student_class_id}`;
+                }
             }
 
             showLoading(show) {
@@ -1032,7 +904,6 @@
             }
 
             showAlert(message, type) {
-                // Create or update alert container
                 let alertContainer = document.getElementById('paymentMessages');
                 if (!alertContainer) {
                     alertContainer = document.createElement('div');
@@ -1052,7 +923,6 @@
                 alertContainer.innerHTML = '';
                 alertContainer.appendChild(alertDiv);
 
-                // Auto remove after 5 seconds
                 setTimeout(() => {
                     const alert = document.getElementById(alertId);
                     if (alert) {

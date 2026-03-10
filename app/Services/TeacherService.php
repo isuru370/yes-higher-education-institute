@@ -7,7 +7,6 @@ namespace App\Services;
 use App\Models\Teacher;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Log;
 use Exception;
 use Illuminate\Validation\Rule;
 
@@ -233,12 +232,6 @@ class TeacherService
         } catch (Exception $e) {
             DB::rollBack();
 
-            Log::error('Teacher creation error:', [
-                'message' => $e->getMessage(),
-                'trace' => $e->getTraceAsString(),
-                'request_data' => $request->all()
-            ]);
-
             return response()->json([
                 'status' => 'error',
                 'message' => 'An error occurred while creating the teacher.',
@@ -324,12 +317,6 @@ class TeacherService
             ], 422);
         } catch (Exception $e) {
             DB::rollBack();
-
-            Log::error('Teacher update error:', [
-                'message' => $e->getMessage(),
-                'trace' => $e->getTraceAsString(),
-                'request_data' => $request->all()
-            ]);
 
             return response()->json([
                 'status' => 'error',

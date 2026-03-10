@@ -121,6 +121,8 @@
                                         <div id="selectedImageInfo" class="mt-3 p-2 bg-light rounded" style="display: none">
                                             <small class="text-muted" id="imageSource"></small>
                                         </div>
+                                        <!-- Hidden input for quick_image_id -->
+                                        <input type="hidden" name="quick_image_id" id="quick_image_id" value="">
                                     </div>
                                 </div>
                             </div>
@@ -128,19 +130,31 @@
                             <!-- Student Details Form -->
                             <div class="col-md-8">
                                 <div class="row">
+                                    <!-- QR Code Information -->
+                                    <div class="col-12">
+                                        <h5 class="border-bottom pb-2 mb-3">QR Code Information</h5>
+                                    </div>
+
+                                    <div class="col-md-12 mb-3">
+                                        <label class="form-label">Temporary QR Code <span class="text-danger">*</span></label>
+                                        <input type="text" name="temporary_qr_code" class="form-control" 
+                                            placeholder="Enter temporary QR code" required>
+                                        <small class="text-muted">Enter the temporary QR code provided to the student</small>
+                                    </div>
+
                                     <!-- Personal Information -->
-                                    <div class="col-12 card-header bg-primary text-white">
+                                    <div class="col-12 mt-4">
                                         <h5 class="border-bottom pb-2 mb-3">Personal Information</h5>
                                     </div>
 
                                     <div class="col-md-6 mb-3">
                                         <label class="form-label">Full Name <span class="text-danger">*</span></label>
-                                        <input type="text" name="fname" class="form-control" required>
+                                        <input type="text" name="full_name" class="form-control" required>
                                     </div>
 
                                     <div class="col-md-6 mb-3">
-                                        <label class="form-label">Initial Name <span class="text-danger">*</span></label>
-                                        <input type="text" name="lname" class="form-control" required>
+                                        <label class="form-label">Name with Initials <span class="text-danger">*</span></label>
+                                        <input type="text" name="initial_name" class="form-control" required>
                                     </div>
 
                                     <div class="col-md-6 mb-3">
@@ -149,8 +163,8 @@
                                     </div>
 
                                     <div class="col-md-6 mb-3">
-                                        <label class="form-label">WhatsApp Mobile</label>
-                                        <input type="text" name="whatsapp_mobile" class="form-control">
+                                        <label class="form-label">WhatsApp Mobile <span class="text-danger">*</span></label>
+                                        <input type="text" name="whatsapp_mobile" class="form-control" required>
                                     </div>
 
                                     <div class="col-md-6 mb-3">
@@ -164,8 +178,8 @@
                                     </div>
 
                                     <div class="col-md-6 mb-3">
-                                        <label class="form-label">Birthday <span class="text-danger">*</span></label>
-                                        <input type="date" name="bday" class="form-control" required>
+                                        <label class="form-label">Birthday</label>
+                                        <input type="date" name="bday" class="form-control">
                                     </div>
 
                                     <div class="col-md-6 mb-3">
@@ -179,7 +193,7 @@
                                     </div>
 
                                     <!-- Address Information -->
-                                    <div class="col-12 mt-4 card-header bg-success text-white">
+                                    <div class="col-12 mt-4">
                                         <h5 class="border-bottom pb-2 mb-3">Address Information</h5>
                                     </div>
 
@@ -189,8 +203,8 @@
                                     </div>
 
                                     <div class="col-12 mb-3">
-                                        <label class="form-label">Address Line 2</label>
-                                        <input type="text" name="address2" class="form-control">
+                                        <label class="form-label">Address Line 2 <span class="text-danger">*</span></label>
+                                        <input type="text" name="address2" class="form-control" required>
                                     </div>
 
                                     <div class="col-12 mb-3">
@@ -199,33 +213,32 @@
                                     </div>
 
                                     <!-- Guardian Information -->
-                                    <div class="col-12 mt-4 card-header bg-info text-white">
+                                    <div class="col-12 mt-4">
                                         <h5 class="border-bottom pb-2 mb-3">Guardian Information</h5>
                                     </div>
 
                                     <div class="col-md-6 mb-3">
-                                        <label class="form-label">Guardian First Name <span
-                                                class="text-danger">*</span></label>
+                                        <label class="form-label">Guardian First Name <span class="text-danger">*</span></label>
                                         <input type="text" name="guardian_fname" class="form-control" required>
                                     </div>
 
                                     <div class="col-md-6 mb-3">
-                                        <label class="form-label">Guardian Last Name</label>
-                                        <input type="text" name="guardian_lname" class="form-control">
+                                        <label class="form-label">Guardian Last Name <span class="text-danger">*</span></label>
+                                        <input type="text" name="guardian_lname" class="form-control" required>
                                     </div>
 
                                     <div class="col-md-6 mb-3">
-                                        <label class="form-label">Guardian Mobile <span class="text-danger">*</span></label>
-                                        <input type="text" name="guardian_mobile" class="form-control" required>
+                                        <label class="form-label">Guardian Mobile</label>
+                                        <input type="text" name="guardian_mobile" class="form-control">
                                     </div>
 
                                     <div class="col-md-6 mb-3">
                                         <label class="form-label">Guardian NIC</label>
                                         <input type="text" name="guardian_nic" class="form-control">
                                     </div>
-
+                                   
                                     <!-- Academic Information -->
-                                    <div class="col-12 mt-4 card-header bg-warning text-dark">
+                                    <div class="col-12 mt-4">
                                         <h5 class="border-bottom pb-2 mb-3">Academic Information</h5>
                                     </div>
 
@@ -235,19 +248,15 @@
                                             <option value="">Select Grade</option>
                                             <!-- Grades will be populated via JavaScript -->
                                         </select>
-
                                     </div>
 
                                     <div class="col-md-6 mb-3">
-                                        <label for="class_type" class="form-label">
-                                            Class Type <span class="text-danger">*</span>
-                                        </label>
-                                        <select class="form-select" id="class_type" name="class_type" required>
+                                        <label class="form-label">Class Type <span class="text-danger">*</span></label>
+                                        <select name="class_type" class="form-select" required>
                                             <option value="">Select Class Type</option>
-                                            <option value="offline">Offline</option>
                                             <option value="online">Online</option>
+                                            <option value="offline">Offline</option>
                                         </select>
-                                        <div class="invalid-feedback" id="class_type_error"></div>
                                     </div>
 
                                     <div class="col-md-6 mb-3">
@@ -262,6 +271,9 @@
                                             <option value="1">Yes</option>
                                         </select>
                                     </div>
+
+                                    <!-- Hidden Fields -->
+                                    <input type="hidden" name="is_active" value="1">
 
                                     <!-- Submit Button -->
                                     <div class="col-12 mt-4">
@@ -524,9 +536,10 @@
             // Add selection to clicked item
             event.currentTarget.classList.add('selected');
 
-            // Set student image
+            // Set student image and quick image ID
             studentImageUrl = imageUrl;
             selectedQuickImageId = id;
+            document.getElementById('quick_image_id').value = id;
 
             // Update preview
             updateImagePreview(imageUrl, `Quick Image: ${customId}`);
@@ -559,8 +572,10 @@
                 console.log('Upload response:', data);
 
                 if (data.status === 'success') {
-                    // FIX: Use the image_url directly from response
                     studentImageUrl = data.image_url;
+                    // Clear quick image selection if any
+                    selectedQuickImageId = null;
+                    document.getElementById('quick_image_id').value = '';
                     updateImagePreview(studentImageUrl, `Uploaded via ${source}`);
                     showAlert('Image uploaded successfully!', 'success');
                 } else {
@@ -601,13 +616,21 @@
         async function handleFormSubmit(e) {
             e.preventDefault();
 
+            // Validate image
             if (!studentImageUrl) {
                 showAlert('Please upload or select a student image', 'warning');
                 return;
             }
 
+            // Validate temporary QR code
+            const tempQRCode = document.querySelector('input[name="temporary_qr_code"]').value.trim();
+            if (!tempQRCode) {
+                showAlert('Please enter the temporary QR code', 'warning');
+                return;
+            }
+
             // Validate required fields
-            const requiredFields = ['fname', 'lname', 'mobile', 'bday', 'gender', 'address1', 'guardian_fname', 'guardian_mobile', 'grade_id', 'class_type'];
+            const requiredFields = ['full_name', 'initial_name', 'mobile', 'whatsapp_mobile', 'gender', 'address1', 'address2', 'guardian_fname', 'guardian_lname', 'grade_id', 'class_type'];
             const missingFields = [];
 
             requiredFields.forEach(field => {
@@ -625,12 +648,18 @@
             const formData = new FormData(e.target);
             const studentData = {
                 img_url: studentImageUrl,
-                is_active: true
+                is_active: true,
+                temporary_qr_code: tempQRCode
             };
+
+            // Add quick_image_id if selected
+            if (selectedQuickImageId) {
+                studentData.quick_image_id = selectedQuickImageId;
+            }
 
             // Convert FormData to object with proper type conversion
             for (let [key, value] of formData.entries()) {
-                if (value) {
+                if (value && !studentData.hasOwnProperty(key)) {
                     // Convert string '0'/'1' to boolean for specific fields
                     if (['admission'].includes(key)) {
                         studentData[key] = value === '1';
@@ -664,11 +693,6 @@
                 console.log('Registration response:', studentResult);
 
                 if (studentResult.status === 'success' || studentResponse.ok) {
-                    // If quick image was used, deactivate it
-                    if (selectedQuickImageId) {
-                        await deactivateQuickImage(selectedQuickImageId);
-                    }
-
                     // Safely get the custom_id
                     const studentId = studentResult.data?.custom_id
                         || studentResult.data?.student?.custom_id
@@ -702,30 +726,12 @@
             }
         }
 
-        // ================= DEACTIVATE QUICK IMAGE =================
-        async function deactivateQuickImage(quickImageId) {
-            try {
-                const response = await fetch(`/api/quick-photos/${quickImageId}`, {
-                    method: 'DELETE',
-                    headers: {
-                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
-                        'Accept': 'application/json'
-                    }
-                });
-
-                if (!response.ok) {
-                    console.warn('Failed to deactivate quick image, but student was registered');
-                }
-            } catch (e) {
-                console.error('Error deactivating quick image:', e);
-            }
-        }
-
         // ================= UTILITY FUNCTIONS =================
         function resetForm() {
             document.getElementById('studentRegistrationForm').reset();
             studentImageUrl = null;
             selectedQuickImageId = null;
+            document.getElementById('quick_image_id').value = '';
 
             const preview = document.getElementById('studentImagePreview');
             const placeholder = document.getElementById('imagePlaceholder');
@@ -758,15 +764,15 @@
                     type === 'info' ? 'fa-info-circle' : 'fa-times-circle';
 
             alertDiv.innerHTML = `
-                            <div class="d-flex align-items-start">
-                                <i class="fas ${icon} fa-lg me-3 mt-1"></i>
-                                <div class="flex-grow-1">
-                                    <strong>${type === 'success' ? 'Success!' : type === 'warning' ? 'Warning!' : type === 'info' ? 'Info:' : 'Error!'}</strong> 
-                                    <span>${message}</span>
-                                </div>
-                                <button type="button" class="btn-close ms-2" data-bs-dismiss="alert"></button>
-                            </div>
-                        `;
+                <div class="d-flex align-items-start">
+                    <i class="fas ${icon} fa-lg me-3 mt-1"></i>
+                    <div class="flex-grow-1">
+                        <strong>${type === 'success' ? 'Success!' : type === 'warning' ? 'Warning!' : type === 'info' ? 'Info:' : 'Error!'}</strong> 
+                        <span>${message}</span>
+                    </div>
+                    <button type="button" class="btn-close ms-2" data-bs-dismiss="alert"></button>
+                </div>
+            `;
 
             document.body.appendChild(alertDiv);
             currentAlert = alertDiv;
@@ -789,7 +795,6 @@
             }
 
             resultsContainer.innerHTML = images.map(img => {
-                // Use the image URL directly from API response
                 const imageUrl = img.quick_img || img.image_url || '';
 
                 if (!imageUrl) {
@@ -797,18 +802,18 @@
                 }
 
                 return `
-                                <div class="quick-image-item card mb-2 p-2" onclick="selectQuickImage(${img.id}, '${imageUrl}', '${img.custom_id || 'No ID'}')">
-                                    <div class="row g-2 align-items-center">
-                                        <div class="col-3">
-                                            <img src="${imageUrl}" class="img-fluid rounded" style="height: 60px; object-fit: cover; width: 100%;">
-                                        </div>
-                                        <div class="col-9">
-                                            <small class="fw-bold">ID: ${img.custom_id || 'No ID'}</small><br>
-                                            <small class="text-muted">Grade: ${img.grade?.grade_name || 'N/A'}</small>
-                                        </div>
-                                    </div>
-                                </div>
-                            `;
+                    <div class="quick-image-item card mb-2 p-2" onclick="selectQuickImage(${img.id}, '${imageUrl}', '${img.custom_id || 'No ID'}')">
+                        <div class="row g-2 align-items-center">
+                            <div class="col-3">
+                                <img src="${imageUrl}" class="img-fluid rounded" style="height: 60px; object-fit: cover; width: 100%;">
+                            </div>
+                            <div class="col-9">
+                                <small class="fw-bold">ID: ${img.custom_id || 'No ID'}</small><br>
+                                <small class="text-muted">Grade: ${img.grade?.grade_name || 'N/A'}</small>
+                            </div>
+                        </div>
+                    </div>
+                `;
             }).join('');
         }
     </script>

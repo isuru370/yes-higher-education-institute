@@ -3,7 +3,6 @@
 namespace App\Http\Controllers;
 
 use App\Services\BankBranchService;
-use Symfony\Component\HttpFoundation\Request;
 
 class BankBranchController extends Controller
 {

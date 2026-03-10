@@ -2,9 +2,9 @@
 
 namespace App\Services;
 
+use App\Jobs\SendPaymentSms;
 use App\Models\ClassAttendance;
 use App\Models\ClassCategoryHasStudentClass;
-use App\Models\ClassRoom;
 use App\Models\Payments;
 use App\Models\Student;
 use App\Models\StudentStudentStudentClass;
@@ -12,7 +12,6 @@ use Carbon\Carbon;
 use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Log;
 
 class StudentPaymentService
 {
@@ -56,35 +55,70 @@ class StudentPaymentService
         }
     }
 
-    public function fetchStudentClassWisePayments($custom_id)
+    public function fetchPaymentsByQRCode(Request $request)
     {
+        $request->validate([
+            'qr_code' => 'required|string',
+        ]);
+
         try {
+            $qrCode = $request->qr_code;
+            $now = Carbon::now();
 
-            if (empty($custom_id)) {
-                return response()->json([
-                    'status' => 'error',
-                    'message' => 'Student Custom ID is required',
-                    'data' => []
-                ], 400);
+            // 1️⃣ Determine temporary or permanent QR
+            if (str_starts_with($qrCode, 'TMP')) {
+                $student = Student::where('temporary_qr_code', $qrCode)
+                    ->where('student_disable', false)
+                    ->first();
+
+                if (!$student) {
+                    return response()->json([
+                        'status' => 'error',
+                        'message' => 'Temporary QR code invalid',
+                        'data' => []
+                    ], 404);
+                }
+
+                if ($student->temporary_qr_code_expire_date && $now->gt($student->temporary_qr_code_expire_date)) {
+                    return response()->json([
+                        'status' => 'error',
+                        'message' => 'Temporary QR code expired',
+                        'data' => []
+                    ], 403);
+                }
+            } else {
+                // Permanent QR
+                $student = Student::where('custom_id', $qrCode)
+                    ->where('student_disable', false)
+                    ->first();
+
+                if (!$student) {
+                    return response()->json([
+                        'status' => 'error',
+                        'message' => 'QR code invalid',
+                        'data' => []
+                    ], 404);
+                }
+
+                if (!$student->permanent_qr_active) {
+                    return response()->json([
+                        'status' => 'error',
+                        'message' => 'Permanent QR code inactive',
+                        'data' => []
+                    ], 403);
+                }
             }
 
-            // Get student
-            $student = Student::where('custom_id', $custom_id)
-                ->where('student_disable', false)
-                ->where('is_active', true)
-                ->first();
-
-            // Log::info("Fetching payments for student with custom_id: $custom_id");
-
-            if (!$student) {
+            // 2️⃣ Check student active
+            if ($student->is_active == 0) {
                 return response()->json([
                     'status' => 'error',
-                    'message' => 'Student not found',
+                    'message' => 'Student inactive',
                     'data' => []
-                ], 404);
+                ], 403);
             }
 
-            // Get ALL classes with relationships
+            // 3️⃣ Fetch class-wise payments (existing function logic)
             $studentClasses = StudentStudentStudentClass::with([
                 'student',
                 'classCategoryHasStudentClass.classCategory',
@@ -92,43 +126,38 @@ class StudentPaymentService
                 'studentClass.subject'
             ])
                 ->where('student_id', $student->id)
-                ->where('status', 1) // Only active classes
+                ->where('status', 1)
                 ->get();
 
             if ($studentClasses->isEmpty()) {
                 return response()->json([
                     'status' => 'error',
-                    'message' => 'No classes found for this student',
+                    'message' => 'No classes found',
                     'data' => []
                 ], 404);
             }
 
             $result = $studentClasses->map(function ($studentClassModel) {
-
-                // Get latest payment for this class
-                $latestPayment = Payments::where('status', 1) // Only consider active payments
+                $latestPayment = Payments::where('status', 1)
                     ->where('student_id', $studentClassModel->student_id)
                     ->where('student_student_student_classes_id', $studentClassModel->id)
                     ->orderBy('payment_date', 'desc')
                     ->first();
 
                 return [
-
                     'student_student_student_classes_id' => $studentClassModel->id,
                     'student_id' => $studentClassModel->student_id,
                     'class_category_has_student_class_id' => $studentClassModel->class_category_has_student_class_id,
                     'status' => $studentClassModel->status,
                     'is_free_card' => $studentClassModel->is_free_card,
-
                     'student' => [
                         'id' => $studentClassModel->student->id,
                         'custom_id' => $studentClassModel->student->custom_id,
-                        'first_name' => $studentClassModel->student->fname,
-                        'last_name' => $studentClassModel->student->lname,
+                        'first_name' => $studentClassModel->student->full_name,
+                        'last_name' => $studentClassModel->student->initial_name,
                         'guardian_mobile' => $studentClassModel->student->guardian_mobile,
                         'img_url' => $studentClassModel->student->img_url,
                     ],
-
                     'class_category_has_student_class' => [
                         'id' => $studentClassModel->classCategoryHasStudentClass->id,
                         'fees' => $studentClassModel->classCategoryHasStudentClass->fees,
@@ -138,7 +167,6 @@ class StudentPaymentService
                                 ->classCategory->category_name ?? null,
                         ]
                     ],
-
                     'student_class' => [
                         'id' => $studentClassModel->studentClass->id,
                         'class_name' => $studentClassModel->studentClass->class_name,
@@ -151,15 +179,12 @@ class StudentPaymentService
                             $studentClassModel->studentClass->subject->subject_name
                         ] : null,
                     ],
-
-                    // 🔥 Latest Payment Added Here
                     'latest_payment' => $latestPayment ? [
                         'payment_id' => $latestPayment->id,
                         'amount' => $latestPayment->amount,
                         'payment_date' => $latestPayment->payment_date,
                         'payment_for_month' => $latestPayment->payment_for,
                     ] : null
-
                 ];
             });
 
@@ -167,13 +192,13 @@ class StudentPaymentService
                 'status' => 'success',
                 'message' => 'Student class payments fetched successfully',
                 'data' => $result
-            ]);
+            ], 200);
         } catch (Exception $e) {
-
             return response()->json([
                 'status' => 'error',
                 'message' => 'Failed to fetch payments data',
-                'data' => []
+                'data' => [],
+                'error' => $e->getMessage()
             ], 500);
         }
     }
@@ -291,23 +316,23 @@ class StudentPaymentService
         // Validate request
         $validated = $request->validate([
             'payment_date' => 'required|date',
-            'status' => 'required|integer|in:0,1', // 0=deleted, 1=active
+            'status' => 'required|integer|in:0,1',
             'amount' => 'required|numeric',
             'student_id' => 'required|integer',
             'student_student_student_classes_id' => 'required|integer',
-            'payment_for' => 'required|string|max:20', // e.g., "2025 Feb"
-
+            'payment_for' => 'required|string|max:20',
+            'guardian_mobile' => 'required|string'
         ]);
 
         try {
             DB::beginTransaction();
 
-            // For ACTIVE payments (status = 1), check for duplicates
+            // Check duplicates
             if ($validated['status'] == 1) {
                 $existingPayment = Payments::where('payment_for', $validated['payment_for'])
                     ->where('student_id', $validated['student_id'])
                     ->where('student_student_student_classes_id', $validated['student_student_student_classes_id'])
-                    ->where('status', 1) // Check only ACTIVE payments
+                    ->where('status', 1)
                     ->first();
 
                 if ($existingPayment) {
@@ -319,24 +344,45 @@ class StudentPaymentService
                 }
             }
 
-            // For DELETED payments (status = 0), allow duplicates
-            // Or if no duplicate found for active payment, create new record
-
-            // Save record
+            // Save payment
             $payment = Payments::create(array_merge(
                 $validated,
-                ['user_id' => auth()->id()] // track who created
+                ['user_id' => auth()->id()]
             ));
 
+            // Get child info
+            // $childInfo = StudentStudentStudentClass::with([
+            //     'student',
+            //     'studentClass',
+            //     'classCategoryHasStudentClass.classCategory'
+            // ])->where('id', $validated['student_student_student_classes_id'])
+            //     ->first();
+
             DB::commit();
+
+            // ✅ SMS sending via Queue Job
+            // if ($validated['status'] == 1 && $childInfo) {
+            //     $guardianNumber = $validated['guardian_mobile'];
+            //     $amount = $validated['amount'];
+            //     $month = $validated['payment_for'];
+            //     $childName = $childInfo->student->initial_name ?? '';
+            //     $className = $childInfo->studentClass->class_name ?? '';
+            //     $categoryName = optional($childInfo->classCategoryHasStudentClass->classCategory)->category_name ?? '';
+
+            //     $message = "Payment received for {$childName} ({$className} - {$categoryName}): LKR {$amount} for {$month}. Thank you.";
+
+            //     // Dispatch SMS job to async queue
+            //     SendPaymentSms::dispatch($guardianNumber, $message)->onQueue('sms');
+            // }
 
             return response()->json([
                 'status' => 'success',
                 'message' => 'Payment stored successfully',
                 'data' => $payment
-            ], 201);
+            ], 200);
         } catch (Exception $e) {
             DB::rollBack();
+
             return response()->json([
                 'status' => 'error',
                 'message' => 'Failed to store payment',
@@ -361,7 +407,7 @@ class StudentPaymentService
                 'message' => 'Payment updated successfully',
                 'data' => $payment
             ]);
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             return response()->json([
                 'status' => 'error',
                 'message' => 'Failed to update payment',
@@ -429,8 +475,8 @@ class StudentPaymentService
                         'student' =>  [
                             'id' => $payment->student->id,
                             'custom_id' => $payment->student->custom_id,
-                            'first_name' => $payment->student->fname,
-                            'last_name' => $payment->student->lname,
+                            'first_name' => $payment->student->full_name,
+                            'last_name' => $payment->student->initial_name,
                         ],
                         'student_class' => [
                             'id' => $payment->studentStudentClass->studentClass->id,
@@ -438,8 +484,8 @@ class StudentPaymentService
                         ],
                         'teacher' => [
                             'id' => $payment->studentStudentClass->studentClass->teacher->id,
-                            'first_name' => $payment->studentStudentClass->studentClass->teacher->fname,
-                            'last_name' => $payment->studentStudentClass->studentClass->teacher->lname,
+                            'first_name' => $payment->studentStudentClass->studentClass->teacher->full_name,
+                            'last_name' => $payment->studentStudentClass->studentClass->teacher->initial_name,
                         ],
                     ];
                 });
@@ -536,7 +582,7 @@ class StudentPaymentService
                     $groupedByTeacher[$teacherId]['classes'][$classId]['students'][$studentId] = [
                         'student_id' => $student->id,
                         'student_custom_id' => $student->custom_id,
-                        'student_name' => $student->fname . ' ' . $student->lname,
+                        'student_name' =>  $student->initial_name,
                         'total_amount' => 0,
                         'payments' => []
                     ];
@@ -640,8 +686,8 @@ class StudentPaymentService
                 'student' => [
                     'id' => $payment->student->id,
                     'custom_id' => $payment->student->custom_id,
-                    'fname' => $payment->student->fname,
-                    'lname' => $payment->student->lname,
+                    'fname' => $payment->student->full_name,
+                    'lname' => $payment->student->initial_name,
                 ],
 
                 'student_class' => [

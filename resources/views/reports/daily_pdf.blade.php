@@ -204,7 +204,7 @@
     <div class="page-container">
         <!-- HEADER -->
         <div class="letterhead">
-            <h2>Savidya Education</h2>
+            <h2>Yes Education</h2>
             <h4>Daily Payment Report</h4>
         </div>
         

@@ -297,7 +297,7 @@
                      onerror="this.src='/uploads/logo/logo.png'">
             </div>
             <div class="col-md-5">
-                <h5>${student.first_name} ${student.last_name}</h5>
+                <h5>${student.last_name}</h5>
                 <p class="mb-1"><strong>Student ID:</strong> ${student.student_custom_id}</p>
                 <p class="mb-1"><strong>Guardian Mobile:</strong> ${student.guardian_mobile}</p>
                 <p class="mb-1"><strong>Class:</strong> ${studentData.student_class.class_name}</p>

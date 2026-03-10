@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Jobs\SendPaymentSms;
 use App\Models\ClassAttendance;
 use App\Models\Student;
 use App\Models\StudentStudentStudentClass;
@@ -12,53 +13,88 @@ use App\Models\Titute;
 use Illuminate\Http\Request;
 use Carbon\Carbon;
 use Exception;
-use Illuminate\Support\Facades\Log;
 
 class StudentAttendanceService
 {
     public function readAttendance(Request $request)
     {
         $request->validate([
-            'custom_id' => 'required|string'
+            'qr_code' => 'required|string',
         ]);
 
         try {
-            $student = Student::where('custom_id', $request->custom_id)
-            ->where('student_disable',false)
-            ->first();
+            $qrCode = $request->qr_code;
+            $now = Carbon::now();
 
-            if (!$student) {
-                return response()->json([
-                    'status' => 'error',
-                    'message' => 'Student not found'
-                ]);
+
+            // 1️⃣ Temporary QR (starts with TMP)
+            if (str_starts_with($qrCode, 'TMP')) {
+                $student = Student::where('temporary_qr_code', $qrCode)
+                    ->where('student_disable', false)
+                    ->first();
+
+                if (!$student) {
+                    return response()->json([
+                        'status' => 'error',
+                        'message' => 'Temporary QR code invalid'
+                    ], 404);
+                }
+
+                if ($student->temporary_qr_code_expire_date && $now->gt($student->temporary_qr_code_expire_date)) {
+                    return response()->json([
+                        'status' => 'error',
+                        'message' => 'Temporary QR code has expired'
+                    ], 403);
+                }
+            } else {
+                // 2️⃣ Permanent QR (custom_id)
+                $student = Student::where('custom_id', $qrCode)
+                    ->where('student_disable', false)
+                    ->first();
+
+                if (!$student) {
+                    return response()->json([
+                        'status' => 'error',
+                        'message' => 'QR code invalid'
+                    ], 404);
+                }
+
+                if (!$student->permanent_qr_active) {
+                    return response()->json([
+                        'status' => 'error',
+                        'message' => 'Permanent QR code is inactive'
+                    ], 403);
+                }
             }
 
+            // 3️⃣ Student inactive check
             if ($student->is_active == 0) {
                 return response()->json([
                     'status' => 'error',
                     'message' => 'Student is inactive'
-                ]);
+                ], 403);
             }
 
+            // 4️⃣ Fetch attendance details
             $result = $this->getStudentClassesDetails($student->id);
 
             return response()->json([
                 'status' => 'success',
                 'student_id' => $student->id,
                 'data' => $result
-            ]);
+            ], 200);
         } catch (Exception $e) {
+
             return response()->json([
                 'status' => 'error',
                 'message' => 'Failed to fetch student attendance',
                 'error' => $e->getMessage()
-            ]);
+            ], 500);
         }
     }
-
     public function getStudentClassesDetails($student_id)
     {
+
         if (!$student_id) {
             return [];
         }
@@ -77,6 +113,7 @@ class StudentAttendanceService
         $allCategories = ClassCategoryHasStudentClass::with('classCategory')
             ->whereIn('student_classes_id', $studentClassIds)
             ->get();
+
         $categoryIds = $allCategories->pluck('id')->unique();
         if ($categoryIds->isEmpty()) {
             return [];
@@ -101,7 +138,7 @@ class StudentAttendanceService
             ->exists();
 
         // Get all attendance IDs from today's classes for counting
-        $todaysClassIds = $todaysClasses->pluck('id')->toArray();
+        $todaysClasses->pluck('id')->toArray();
 
         // Count attendance for this month for ALL classes (or specific if needed)
         $attendanceCountThisMonth = StudentAttendances::where('student_id', $student_id)
@@ -112,16 +149,21 @@ class StudentAttendanceService
 
         foreach ($enrollments as $enrollment) {
             $studentClass = $enrollment->studentClass;
-            if (!$studentClass) continue;
+            if (!$studentClass) {
+                continue;
+            }
 
             $categories = $allCategories->where('student_classes_id', $studentClass->id);
+
 
             foreach ($categories as $cat) {
                 $todaysClass = $todaysClasses->first(
                     fn($c) => $c->class_category_has_student_class_id == $cat->id
                 );
 
-                if (!$todaysClass) continue;
+                if (!$todaysClass) {
+                    continue;
+                }
 
                 // FIX: parse UTC timestamp to date only for Y-m-d
                 $cleanDate = Carbon::parse($todaysClass->date)->format('Y-m-d');
@@ -129,12 +171,16 @@ class StudentAttendanceService
                 $start = $this->parseDateTime($cleanDate, $todaysClass->start_time);
                 $end   = $this->parseDateTime($cleanDate, $todaysClass->end_time);
 
-                if (!$start || !$end) continue;
+                if (!$start || !$end) {
+                    continue;
+                }
 
                 $oneHourBefore = $start->copy()->subHour();
 
                 // Check if current time is inside attendance window (1 hour before → end)
-                if (!$now->between($oneHourBefore, $end)) continue;
+                if (!$now->between($oneHourBefore, $end)) {
+                    continue;
+                }
 
                 // Count attendance for THIS SPECIFIC class for this month
                 $attendanceCountForThisClass = StudentAttendances::where('student_id', $student_id)
@@ -154,8 +200,8 @@ class StudentAttendanceService
                         'id' => $student_id,
                         'img_url' => $enrollment->student->img_url ?? null,
                         'custom_id' => $enrollment->student->custom_id,
-                        'first_name' => $enrollment->student->fname,
-                        'last_name' => $enrollment->student->lname,
+                        'first_name' => $enrollment->student->full_name,
+                        'last_name' => $enrollment->student->initial_name,
                         'guardian_mobile' => $enrollment->student->guardian_mobile
                     ],
                     'ongoing_class' => [
@@ -222,7 +268,8 @@ class StudentAttendanceService
                 'student_student_student_classes_id' => 'required|integer',
                 'attendance_id' => 'required|integer',
                 'tute' => 'required|boolean',
-                'class_category_has_student_class_id' => 'nullable|integer',
+                'class_category_has_student_class_id' => 'integer',
+                'guardian_mobile' => 'required|string',
             ]);
 
             $date = now()->toDateString();
@@ -272,7 +319,7 @@ class StudentAttendanceService
                     ->exists();
 
                 if (!$tuteExists) {
-                    Titute::create([
+                    $tute = Titute::create([
                         'student_id' => $studentId,
                         'class_category_has_student_class_id' => $request->class_category_has_student_class_id,
                         'titute_for' => $month->format('M Y'),
@@ -284,6 +331,25 @@ class StudentAttendanceService
                 }
             }
 
+            // ✅ SMS sending via Job queue
+            $childInfo = StudentStudentStudentClass::with([
+                'student',
+                'studentClass',
+                'classCategoryHasStudentClass.classCategory'
+            ])->where('id', $studentClassId)->first();
+
+            if ($childInfo) {
+                $guardianNumber = $request->guardian_mobile;
+                $studentName = $childInfo->student->initial_name ?? '';
+                $className = $childInfo->studentClass->class_name ?? '';
+                $categoryName = optional($childInfo->classCategoryHasStudentClass->classCategory)->category_name ?? '';
+
+                $message = "Attendance marked for {$studentName} ({$className} - {$categoryName}) on {$date}. Thank you.";
+
+                // Dispatch SMS job async
+                SendPaymentSms::dispatch($guardianNumber, $message)->onQueue('sms');
+            }
+
             return response()->json([
                 'status' => 'success',
                 'message' => 'Attendance marked successfully',
@@ -291,6 +357,7 @@ class StudentAttendanceService
                 'tute_marked' => $tuteMarked,
             ]);
         } catch (Exception $e) {
+
             return response()->json([
                 'status' => 'error',
                 'message' => 'Something went wrong while saving attendance',
@@ -587,7 +654,7 @@ class StudentAttendanceService
 
             // Append student details
             $students = Student::whereIn('id', array_column($attendanceList, 'student_id'))
-                ->get(['id', 'custom_id', 'fname', 'lname', 'guardian_mobile'])
+                ->get(['id', 'custom_id', 'full_name', 'initial_name', 'guardian_mobile'])
                 ->keyBy('id');
 
             $finalResult = [];
@@ -598,8 +665,8 @@ class StudentAttendanceService
                 $finalResult[] = [
                     'student_id' => $entry['student_id'],
                     'custom_id' => $student->custom_id ?? null,
-                    'fname' => $student->fname ?? null,
-                    'lname' => $student->lname ?? null,
+                    'fname' => $student->full_name ?? null,
+                    'lname' => $student->initial_name ?? null,
                     'guardian_mobile' => $student->guardian_mobile ?? null,
                     'attendance_status' => $entry['attendance_status'],
                     'status' => $entry['status'],

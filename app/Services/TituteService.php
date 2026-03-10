@@ -25,7 +25,7 @@ class TituteService
             ], 404);
         }
         $stucnlasses = StudentStudentStudentClass::with([
-            'student:id,custom_id,fname,lname,guardian_mobile,img_url',
+            'student:id,custom_id,full_name,initial_name,guardian_mobile,img_url',
             'studentClass:id,class_name,grade_id',
             'classCategoryHasStudentClass.classCategory:id,category_name',
         ])
@@ -37,8 +37,8 @@ class TituteService
                     'student' => [
                         'id' => $item->student_id,
                         'custom_id' => $item->student->custom_id ?? null,
-                        'first_name' => $item->student->fname ?? null,
-                        'last_name' => $item->student->lname ?? null,
+                        'first_name' => $item->student->full_name ?? null,
+                        'last_name' => $item->student->initial_name ?? null,
                         'guardian_mobile' => $item->student->guardian_mobile ?? null,
                         'img_url' => $item->student->img_url ?? null,
                     ],
@@ -131,7 +131,7 @@ class TituteService
         }
 
         $tutes = $query->with([
-            'student:id,custom_id,fname,lname',
+            'student:id,custom_id,full_name,initial_name',
             'classCategoryHasStudentClass.studentClass:id,class_name',
             'classCategoryHasStudentClass.classCategory:id,category_name'
         ])
@@ -142,8 +142,8 @@ class TituteService
                     'titute_for' => $titute->titute_for,
                     'student_custom_id' => $titute->student->custom_id ?? null,
                     'student_name' => trim(
-                        ($titute->student->fname ?? '') . ' ' .
-                            ($titute->student->lname ?? '')
+                        ($titute->student->full_name ?? '') . ' ' .
+                            ($titute->student->initial_name ?? '')
                     ),
                     'class_name' => optional($titute->classCategoryHasStudentClass->studentClass)->class_name,
                     'class_category_name' => optional($titute->classCategoryHasStudentClass->classCategory)->category_name,

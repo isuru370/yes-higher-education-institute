@@ -8,7 +8,6 @@ use App\Models\Teacher;
 use App\Models\TeacherPayment;
 use Carbon\Carbon;
 use Exception;
-use Illuminate\Support\Facades\Log;
 use Throwable;
 use Illuminate\Support\Collection;
 
@@ -54,7 +53,6 @@ class TeacherLedgerSummaryService
                 ]
             ];
         } catch (Exception $e) {
-            Log::error('Ledger Summary Error', ['error' => $e->getMessage(), 'month' => $yearMonth]);
             return [
                 'status' => 'error',
                 'message' => 'Ledger calculation failed'
@@ -133,10 +131,6 @@ class TeacherLedgerSummaryService
 
             return round($totalBalance, 2);
         } catch (Throwable $e) {
-
-            Log::error('Opening Balance Calculation Error', [
-                'error' => $e->getMessage()
-            ]);
 
             return 0.0;
         }

@@ -5,7 +5,6 @@ namespace App\Services;
 use App\Models\Exam;
 use App\Models\StudentStudentStudentClass;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Carbon;
 use Exception;
 
@@ -36,8 +35,8 @@ class ExamService
                     return [
                         'id' => $student->id,
                         'custom_id' => $student->custom_id,
-                        'fname' => $student->fname,
-                        'lname' => $student->lname,
+                        'full_name' => $student->full_name,
+                        'initial_name' => $student->initial_name,
                         'mobile' => $student->mobile,
                         'guardian_mobile' => $student->guardian_mobile,
                         'marks' => $result ? $result->marks : null,
@@ -98,11 +97,6 @@ class ExamService
             // Replace null safe operator ?-> with ternary
             $userId = $request->user() ? $request->user()->id : null;
 
-            Log::info('Exam created', [
-                'exam_id' => $exam->id,
-                'user_id' => $userId,
-            ]);
-
             return response()->json([
                 'status' => 'success',
                 'message' => 'Exam created successfully',
@@ -112,10 +106,6 @@ class ExamService
 
             $userId = $request->user() ? $request->user()->id : null;
 
-            Log::error('Create exam failed', [
-                'error' => $e->getMessage(),
-                'user_id' => $userId,
-            ]);
 
             return response()->json([
                 'status' => 'error',

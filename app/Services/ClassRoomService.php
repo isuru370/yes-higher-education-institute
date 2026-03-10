@@ -98,6 +98,7 @@ class ClassRoomService
         try {
             $validated = $request->validate([
                 'class_name'          => 'required|string|max:255',
+                'medium'              => 'required|string|max:255',
                 'class_type'          => ['required', Rule::in(ClassType::all())],
 
                 'teacher_percentage'  => 'required|numeric|min:0|max:100',

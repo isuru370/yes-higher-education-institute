@@ -28,11 +28,11 @@ use App\Http\Controllers\TeacherPaymentsController;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Route;
 
-
 // Welcome Page Route
 Route::get('/', function () {
     if (auth()->check()) {
-        return redirect('/dashboard');
+        return view('welcome');
+        // return redirect('/dashboard');
     }
     return view('welcome');
 })->name('welcome');
@@ -40,6 +40,22 @@ Route::get('/', function () {
 Route::get('/student_regiter', function () {
     return view('student_register');
 })->name('student_register');
+
+Route::get('/interactive-learning', function () {
+    return view('interactive-learning');
+})->name('interactive-learning');
+
+Route::get('/mobile-app', function () {
+    return view('mobile-app');
+})->name('mobile-app');
+
+Route::get('/web-platform', function () {
+    return view('web-platform');
+})->name('web-platform');
+
+Route::get('/pricing', function () {
+    return view('pricing');
+})->name('pricing');
 
 // Authentication routes - guest users සඳහා පමණි
 Route::middleware(['guest'])->group(function () {
@@ -97,8 +113,8 @@ Route::middleware(['auth', 'check.permission'])->group(function () {
         Route::get('/add_student_to_single_class/{student_id}', [StudentController::class, 'addStudentToSingleClass'])->name('students.add_student_to_single_class');
         Route::get('/student_analytic/{student_id}', [StudentController::class, 'studentAnalytic'])->name('students.student_analytic');
 
-        Route::get('/{id}/edit', [StudentController::class, 'editPage'])->name('students.edit');
-        Route::get('/{custom_id}', [StudentController::class, 'show'])->name('students.show');
+        Route::get('/{student_id}/edit', [StudentController::class, 'editPage'])->name('students.edit');
+        Route::get('/{student_id}', [StudentController::class, 'show'])->name('students.show');
         Route::get('/{classCategoryHasStudentClassId}/{student_id}/exam-results', [StudentController::class, 'examResults'])->name('students.exam_results');
     });
 

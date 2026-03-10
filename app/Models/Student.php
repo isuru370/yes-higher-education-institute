@@ -5,6 +5,9 @@ namespace App\Models;
 use App\Enums\ClassType;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasOne;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Student extends Model
 {
@@ -14,8 +17,10 @@ class Student extends Model
 
     protected $fillable = [
         'custom_id',
-        'fname',
-        'lname',
+        'temporary_qr_code',
+        'temporary_qr_code_expire_date',
+        'full_name',
+        'initial_name',
         'mobile',
         'email',
         'whatsapp_mobile',
@@ -34,16 +39,15 @@ class Student extends Model
         'grade_id',
         'class_type',
         'admission',
-        'is_freecard',
         'student_school',
         'permanent_qr_active',
         'student_disable'
     ];
 
     protected $casts = [
+        'temporary_qr_code_expire_date' => 'datetime',
         'grade_id'            => 'integer',
         'admission'           => 'boolean',
-        'is_freecard'         => 'boolean',
         'is_active'           => 'boolean',
         'permanent_qr_active' => 'boolean',
         'student_disable'     => 'boolean',
@@ -56,14 +60,19 @@ class Student extends Model
     // Relationships
     // ===========================
 
-    public function grade()
+    public function grade(): BelongsTo
     {
         return $this->belongsTo(Grade::class);
     }
 
-    public function portalLogin()
+    public function portalLogin(): HasOne
     {
         return $this->hasOne(StudentPortalLogin::class);
+    }
+
+    public function studentResults(): HasMany
+    {
+        return $this->hasMany(StudentResults::class, 'student_id');
     }
 
     // ===========================
@@ -82,10 +91,6 @@ class Student extends Model
 
     public function hasActivePermanentQr(): bool
     {
-        return $this->permanent_qr_active && !empty($this->permanent_qr);
-    }
-    public function studentResults()
-    {
-        return $this->hasMany(StudentResults::class, 'student_id');
+        return $this->permanent_qr_active;
     }
 }

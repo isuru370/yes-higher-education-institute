@@ -32,14 +32,14 @@ class SystemUsersTableSeeder extends Seeder
                 'custom_id' => 'ADM002',
                 'fname' => 'System',
                 'lname' => 'Administrator',
-                'email' => 'admin@nexorait.com',
+                'email' => 'yeseducation@gmail.com',
                 'mobile' => '0719876543',
                 'nic' => '987654321V',
                 'bday' => '1990-05-20',
                 'gender' => 'female',
-                'address1' => 'Colombo,Sri Lanka',
-                'address2' => 'Nexora IT Solutions',
-                'address3' => 'Colombo',
+                'address1' => 'Wariyapola',
+                'address2' => 'Sri Lanka',
+                'address3' => 'Sri Lanka',
             ],
             // Add more admins here
         ];
@@ -100,7 +100,7 @@ class SystemUsersTableSeeder extends Seeder
             $userId = DB::table('users')->insertGetId([
                 'name' => 'System Administrator',
                 'email' => $email,
-                'password' => Hash::make('nexora'), // default password
+                'password' => Hash::make('yes@Admin'), // default password
                 'user_type' => $adminTypeId,
                 'is_active' => true,
                 'email_verified_at' => now(),

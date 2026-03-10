@@ -132,8 +132,8 @@ class StudentStudentStudentClassService
                         ],
                         'student' => [
                             'student_custom_id' => $item->student->custom_id,
-                            'first_name' => $item->student->fname,
-                            'last_name' => $item->student->lname,
+                            'first_name' => $item->student->full_name,
+                            'last_name' => $item->student->initial_name,
                             'img_url' => $item->student->img_url,
                             'guardian_mobile' => $item->student->guardian_mobile,
                             'student_status' => $item->student->is_active,

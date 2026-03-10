@@ -15,6 +15,7 @@ class ClassRoom extends Model
     protected $fillable = [
         'class_name',
         'class_type',
+        'medium',
         'teacher_percentage',
         'is_active',
         'is_ongoing',

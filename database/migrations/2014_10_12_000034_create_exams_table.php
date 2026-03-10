@@ -22,7 +22,7 @@ class CreateExamsTable extends Migration
             $table->boolean('is_canceled')->default(false);
             $table->timestamps();
 
-            $table->foreign('student_classes_id')->references('id')->on('student_classes');
+            
         });
     }
 

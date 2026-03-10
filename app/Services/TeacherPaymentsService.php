@@ -7,7 +7,6 @@ use App\Models\Payments;
 use App\Models\StudentStudentStudentClass;
 use App\Models\Teacher;
 use App\Models\TeacherPayment;
-use Illuminate\Support\Facades\Log;
 use Carbon\Carbon;
 use Exception;
 use Illuminate\Http\Request;
@@ -18,28 +17,17 @@ class TeacherPaymentsService
     {
         try {
 
-            Log::info("Teacher Payment Calculation Started", [
-                'month' => $yearMonth
-            ]);
-
             $startOfMonth = Carbon::createFromFormat('Y-m', $yearMonth)->startOfMonth();
             $endOfMonth   = Carbon::createFromFormat('Y-m', $yearMonth)->endOfMonth();
 
             // Get active teachers
             $teachers = Teacher::where('is_active', 1)->get();
 
-            Log::info("Active Teachers Found", [
-                'count' => $teachers->count()
-            ]);
 
             $result = [];
 
             foreach ($teachers as $teacher) {
 
-                Log::info("Processing Teacher", [
-                    'teacher_id' => $teacher->id,
-                    'teacher_name' => $teacher->fname . " " . $teacher->lname
-                ]);
 
                 // Get payments for teacher in this month
                 $payments = Payments::where('status', 1)
@@ -50,10 +38,6 @@ class TeacherPaymentsService
                     ->with(['studentStudentClass.studentClass'])
                     ->get();
 
-                Log::info("Payments Found", [
-                    'teacher_id' => $teacher->id,
-                    'payment_count' => $payments->count()
-                ]);
 
                 $classWiseTotals = [];
                 $teacherEarning  = 0;
@@ -75,15 +59,6 @@ class TeacherPaymentsService
                     $teacherCut     = round(($amount * $percentage) / 100, 2);
                     $institutionCut = round($amount - $teacherCut, 2);
 
-                    Log::info("Payment Calculation", [
-                        'teacher_id' => $teacher->id,
-                        'class_id' => $class->id,
-                        'class_name' => $class->class_name,
-                        'payment_amount' => $amount,
-                        'teacher_percentage' => $percentage,
-                        'teacher_cut' => $teacherCut,
-                        'institution_cut' => $institutionCut
-                    ]);
 
                     $teacherEarning += $teacherCut;
                     $totalForMonth  += $amount;
@@ -115,11 +90,6 @@ class TeacherPaymentsService
 
                 $alreadyPaid = (float) $teacherPaidList->sum('payment');
 
-                Log::info("Teacher Already Paid", [
-                    'teacher_id' => $teacher->id,
-                    'already_paid' => $alreadyPaid
-                ]);
-
                 $paidDetails = $teacherPaidList->map(function ($item) {
                     return [
                         'id' => $item->id,
@@ -139,13 +109,6 @@ class TeacherPaymentsService
                 $institutionIncome  = round($totalForMonth - $teacherEarning, 2);
                 $finalPayable       = round(max($teacherEarning - $alreadyPaid, 0), 2);
 
-                Log::info("Teacher Final Calculation", [
-                    'teacher_id' => $teacher->id,
-                    'teacher_earning' => $teacherEarning,
-                    'institution_income' => $institutionIncome,
-                    'already_paid' => $alreadyPaid,
-                    'final_payable' => $finalPayable
-                ]);
 
                 $result[] = [
                     'teacher_id'                => $teacher->id,
@@ -160,19 +123,13 @@ class TeacherPaymentsService
                 ];
             }
 
-            Log::info("Teacher Payment Calculation Completed");
 
             return response()->json([
                 'status' => 'success',
                 'year_month' => $yearMonth,
                 'data' => $result
             ]);
-        } catch (\Exception $e) {
-
-            Log::error("Teacher Payment Error", [
-                'message' => $e->getMessage(),
-                'line' => $e->getLine()
-            ]);
+        } catch (Exception $e) {
 
             return response()->json([
                 'status' => 'error',
@@ -296,13 +253,6 @@ class TeacherPaymentsService
                     'institution_income' => round($totalForMonth - $grossTeacherEarning, 2),
                     'class_wise_breakdown' => array_values($classWise),
                 ];
-
-                Log::info('Teacher Payment Calculated', [
-                    'teacher_id' => $teacher->id,
-                    'gross_earning' => $grossTeacherEarning,
-                    'advance_deducted' => $advanceDeducted,
-                    'net_payable' => $netPayable
-                ]);
             }
 
             return response()->json([
@@ -311,11 +261,6 @@ class TeacherPaymentsService
                 'data' => $result
             ]);
         } catch (Exception $e) {
-
-            Log::error('Teacher Payment Error', [
-                'message' => $e->getMessage(),
-                'line' => $e->getLine()
-            ]);
 
             return response()->json([
                 'status' => 'error',
@@ -510,12 +455,6 @@ class TeacherPaymentsService
             ]);
         } catch (Exception $e) {
 
-            Log::error('Teacher Payment Error', [
-                'teacher_id' => $teacherId,
-                'month' => $yearMonth,
-                'error' => $e->getMessage()
-            ]);
-
             return response()->json([
                 'status' => 'error',
                 'message' => 'Failed to fetch teacher payments.'
@@ -542,7 +481,7 @@ class TeacherPaymentsService
 
             /* ---------- STUDENT CLASS RELATIONS ---------- */
 
-            $studentClasses = StudentStudentStudentClass::with('student:id,custom_id,fname,lname,is_active')
+            $studentClasses = StudentStudentStudentClass::with('student:id,custom_id,full_name,initial_name,is_active')
                 ->whereIn('student_classes_id', $classIds)
                 ->where('status', 1)
                 ->get();
@@ -602,7 +541,7 @@ class TeacherPaymentsService
                     $studentsData[] = [
                         'student_id' => $ssc->student->id,
                         'custom_id' => $ssc->student->custom_id,
-                        'name' => $ssc->student->fname . ' ' . $ssc->student->lname,
+                        'name' =>  $ssc->student->initial_name,
                         'status' => $status,
                         'total_paid' => (float) $totalPaidAmount,
                         'payments' => $studentPayments->map(function ($p) {
@@ -649,12 +588,6 @@ class TeacherPaymentsService
                 'classes' => $classResults
             ]);
         } catch (Exception $e) {
-
-            Log::error('Student Payment Status Error', [
-                'teacher_id' => $teacherId,
-                'month' => $yearMonth,
-                'error' => $e->getMessage()
-            ]);
 
             return response()->json([
                 'status' => 'error',
@@ -793,11 +726,6 @@ class TeacherPaymentsService
                 "payment_method" => "Cash / Bank Deposit"
             ];
         } catch (\Throwable $e) {
-            Log::error('Salary Slip Error', [
-                'teacher_id' => $teacherId,
-                'month' => $yearMonth,
-                'error' => $e->getMessage()
-            ]);
 
             return [
                 "status" => "error",
@@ -989,10 +917,10 @@ class TeacherPaymentsService
         try {
             // 1️⃣ Validation
             if (!$teacherId) {
-                return response()->json([
-                    "status" => "error",
-                    "message" => "Teacher ID is required"
-                ], 400);
+                return [
+                    'success' => false,
+                    'message' => "Teacher ID is required"
+                ];
             }
 
             $yearMonth = Carbon::parse($yearMonth)->format('Y-m');
@@ -1002,56 +930,59 @@ class TeacherPaymentsService
             // 2️⃣ Active teacher
             $teacher = Teacher::where('id', $teacherId)
                 ->where('is_active', 1)
-                ->select('id', 'custom_id', 'fname', 'lname', 'email', 'precentage')
+                ->select('id', 'custom_id', 'fname', 'lname', 'email')
                 ->first();
 
             if (!$teacher) {
-                return response()->json([
-                    "status" => "error",
-                    "message" => "Active teacher not found"
-                ], 404);
+                return [
+                    'success' => false,
+                    'message' => "Active teacher not found"
+                ];
             }
 
-            // 3️⃣ Active classes
-            $classIds = ClassRoom::where('is_active', 1)
+            // 3️⃣ Active classes with their percentages
+            $classes = ClassRoom::where('is_active', 1)
                 ->where('teacher_id', $teacherId)
-                ->pluck('id');
+                ->select('id', 'class_name', 'teacher_percentage')
+                ->get();
 
-            if ($classIds->isEmpty()) {
-                return response()->json([
-                    "status" => "success",
-                    "teacher" => [
+            if ($classes->isEmpty()) {
+                return [
+                    'success' => true,
+                    'teacher' => [
                         'id' => $teacher->id,
                         'name' => $teacher->fname . ' ' . $teacher->lname,
                         'email' => $teacher->email,
-                        'percentage' => $teacher->precentage
                     ],
-                    "year_month" => $yearMonth,
-                    "classes" => []
-                ], 200);
+                    'year_month' => $yearMonth,
+                    'classes' => [],
+                    'students' => []
+                ];
             }
+
+            $classIds = $classes->pluck('id');
 
             // 4️⃣ Fetch student-class assignments
             $studentClasses = StudentStudentStudentClass::with([
-                'student:id,fname,lname,custom_id,is_active',
-                'studentClass:id,class_name'
+                'student:id,initial_name,custom_id,is_active',
+                'studentClass:id,class_name,teacher_percentage'
             ])
                 ->where('status', 1)
                 ->whereIn('student_classes_id', $classIds)
                 ->get();
 
             if ($studentClasses->isEmpty()) {
-                return response()->json([
-                    "status" => "success",
-                    "teacher" => [
+                return [
+                    'success' => true,
+                    'teacher' => [
                         'id' => $teacher->id,
                         'name' => $teacher->fname . ' ' . $teacher->lname,
                         'email' => $teacher->email,
-                        'percentage' => $teacher->precentage
                     ],
-                    "year_month" => $yearMonth,
-                    "classes" => []
-                ], 200);
+                    'year_month' => $yearMonth,
+                    'classes' => [],
+                    'students' => []
+                ];
             }
 
             $studentClassIds = $studentClasses->pluck('id');
@@ -1065,22 +996,27 @@ class TeacherPaymentsService
 
             // 6️⃣ Build class-wise response
             $rows = [];
+            $allStudents = []; // For flat students list
 
             foreach ($studentClasses as $sc) {
                 if (!$sc->student || !$sc->student->is_active) continue;
 
                 $classId = $sc->studentClass->id;
                 $className = $sc->studentClass->class_name;
+                $classPercentage = $sc->studentClass->teacher_percentage ?? 0;
 
                 if (!isset($rows[$classId])) {
                     $rows[$classId] = [
                         'class_id' => $classId,
                         'class_name' => $className,
+                        'teacher_percentage' => $classPercentage,
                         'total_students' => 0,
                         'paid_students' => 0,
                         'unpaid_students' => 0,
                         'free_students' => 0,
                         'paid_amount_total' => 0,
+                        'teacher_earning' => 0,
+                        'institution_income' => 0,
                         'students' => []
                     ];
                 }
@@ -1090,66 +1026,111 @@ class TeacherPaymentsService
                 $studentPayments = $payments[$sc->id] ?? collect();
 
                 // Free student
-                if ($sc->is_free_card) {
+                $isFreeCard = $sc->is_free_card ?? false;
+                if ($isFreeCard ) {
                     $rows[$classId]['free_students']++;
-                    $rows[$classId]['students'][] = [
+
+                    $studentData = [
                         'student_id' => $sc->student->id,
-                        'student_name' => $sc->student->fname . ' ' . $sc->student->lname,
+                        'student_name' => $sc->student->initial_name,
                         'custom_id' => $sc->student->custom_id,
+                        'class_name' => $className,
                         'payment_status' => 'free',
                         'amount' => 0,
+                        'teacher_earning' => 0,
+                        'institution_income' => 0,
                         'date' => null,
                         'payment_for' => 'N/A'
                     ];
+
+                    $rows[$classId]['students'][] = $studentData;
+                    $allStudents[] = $studentData;
                 }
                 // Paid student
                 elseif (!$studentPayments->isEmpty()) {
                     $rows[$classId]['paid_students']++;
+
                     foreach ($studentPayments as $pay) {
-                        $rows[$classId]['paid_amount_total'] += $pay->amount;
-                        $rows[$classId]['students'][] = [
+                        $amount = (float) $pay->amount;
+                        $teacherCut = round(($amount * $classPercentage) / 100, 2);
+                        $institutionCut = round($amount - $teacherCut, 2);
+
+                        $rows[$classId]['paid_amount_total'] += $amount;
+                        $rows[$classId]['teacher_earning'] += $teacherCut;
+                        $rows[$classId]['institution_income'] += $institutionCut;
+
+                        $studentData = [
                             'student_id' => $sc->student->id,
-                            'student_name' => $sc->student->fname . ' ' . $sc->student->lname,
+                            'student_name' => $sc->student->initial_name,
                             'custom_id' => $sc->student->custom_id,
+                            'class_name' => $className,
                             'payment_status' => 'paid',
-                            'amount' => $pay->amount,
+                            'amount' => $amount,
+                            'teacher_earning' => $teacherCut,
+                            'institution_income' => $institutionCut,
                             'date' => $pay->payment_date,
                             'payment_for' => $pay->payment_for
                         ];
+
+                        $rows[$classId]['students'][] = $studentData;
+                        $allStudents[] = $studentData;
                     }
                 }
                 // Unpaid student
                 else {
                     $rows[$classId]['unpaid_students']++;
-                    $rows[$classId]['students'][] = [
+
+                    $studentData = [
                         'student_id' => $sc->student->id,
-                        'student_name' => $sc->student->fname . ' ' . $sc->student->lname,
+                        'student_name' => $sc->student->initial_name,
                         'custom_id' => $sc->student->custom_id,
+                        'class_name' => $className,
                         'payment_status' => 'unpaid',
                         'amount' => 0,
+                        'teacher_earning' => 0,
+                        'institution_income' => 0,
                         'date' => null,
                         'payment_for' => 'N/A'
                     ];
+
+                    $rows[$classId]['students'][] = $studentData;
+                    $allStudents[] = $studentData;
                 }
             }
 
-            // 7️⃣ Return final JSON
-            return response()->json([
-                'status' => 'success',
+            // Calculate totals for all classes
+            $totalPaidAmount = 0;
+            $totalTeacherEarning = 0;
+            $totalInstitutionIncome = 0;
+
+            foreach ($rows as $classId => $classData) {
+                $totalPaidAmount += $classData['paid_amount_total'];
+                $totalTeacherEarning += $classData['teacher_earning'];
+                $totalInstitutionIncome += $classData['institution_income'];
+            }
+
+            // Return data array (NOT JsonResponse)
+            return [
+                'success' => true,
                 'teacher' => [
                     'id' => $teacher->id,
                     'name' => $teacher->fname . ' ' . $teacher->lname,
                     'email' => $teacher->email,
-                    'percentage' => $teacher->precentage
                 ],
                 'year_month' => $yearMonth,
+                'students' => $allStudents, // Add flat students list
+                'totals' => [
+                    'total_paid_amount' => round($totalPaidAmount, 2),
+                    'total_teacher_earning' => round($totalTeacherEarning, 2),
+                    'total_institution_income' => round($totalInstitutionIncome, 2)
+                ],
                 'classes' => array_values($rows)
-            ], 200);
+            ];
         } catch (Exception $e) {
-            return response()->json([
-                'status' => 'error',
+            return [
+                'success' => false,
                 'message' => $e->getMessage()
-            ], 500);
+            ];
         }
     }
 

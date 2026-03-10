@@ -19,8 +19,6 @@ class CreateInstitutePaymentTable extends Migration
             $table->foreignId('user_id')
                 ->constrained('users');
             $table->timestamps();
-
-            $table->foreign('user_id')->references('id')->on('users');
         });
     }
 

@@ -39,8 +39,11 @@
 
                     <!-- Student Edit Form -->
                     <form id="studentEditForm" style="display: none;">
-                        <!-- Image Upload Section -->
+                        @csrf
+                        @method('PUT')
+
                         <div class="row mb-4">
+                            <!-- Image Upload Section -->
                             <div class="col-md-4">
                                 <div class="card">
                                     <div class="card-header bg-secondary text-white">
@@ -50,10 +53,9 @@
                                         <!-- Image Preview -->
                                         <div class="text-center mb-3">
                                             <img id="studentImagePreview" class="img-thumbnail rounded-circle"
-                                                style="width: 200px; height: 200px; object-fit: cover;"
+                                                style="width: 200px; height: 200px; object-fit: cover; display: none;"
                                                 onerror="this.onerror=null; this.src='/uploads/logo/logo.png'">
-                                            <div id="imagePlaceholder" class="text-muted p-4 border rounded"
-                                                style="display: none;">
+                                            <div id="imagePlaceholder" class="text-muted p-4 border rounded">
                                                 <i class="fas fa-user fa-3x mb-3"></i>
                                                 <p class="mb-0">Student image will appear here</p>
                                             </div>
@@ -157,6 +159,7 @@
                                                     <div class="col-md-6">
                                                         <strong class="text-muted">Student ID:</strong>
                                                         <h5 class="text-primary mb-0" id="displayCustomId">Loading...</h5>
+                                                        <input type="hidden" name="custom_id" id="customId">
                                                     </div>
                                                     <div class="col-md-6 text-end">
                                                         <small class="text-muted">This ID cannot be changed</small>
@@ -167,18 +170,18 @@
                                     </div>
 
                                     <!-- Personal Information -->
-                                    <div class="col-12 card-header bg-primary text-white">
+                                    <div class="col-12">
                                         <h5 class="border-bottom pb-2 mb-3">Personal Information</h5>
                                     </div>
 
                                     <div class="col-md-6 mb-3">
-                                        <label class="form-label">First Name <span class="text-danger">*</span></label>
-                                        <input type="text" name="fname" class="form-control" required>
+                                        <label class="form-label">Full Name <span class="text-danger">*</span></label>
+                                        <input type="text" name="full_name" class="form-control" required>
                                     </div>
 
                                     <div class="col-md-6 mb-3">
-                                        <label class="form-label">Last Name <span class="text-danger">*</span></label>
-                                        <input type="text" name="lname" class="form-control" required>
+                                        <label class="form-label">Initial Name <span class="text-danger">*</span></label>
+                                        <input type="text" name="initial_name" class="form-control" required>
                                     </div>
 
                                     <div class="col-md-6 mb-3">
@@ -217,7 +220,7 @@
                                     </div>
 
                                     <!-- Address Information -->
-                                    <div class="col-12 mt-4 card-header bg-success text-white">
+                                    <div class="col-12 mt-4">
                                         <h5 class="border-bottom pb-2 mb-3">Address Information</h5>
                                     </div>
 
@@ -237,7 +240,7 @@
                                     </div>
 
                                     <!-- Guardian Information -->
-                                    <div class="col-12 mt-4 card-header bg-info text-white">
+                                    <div class="col-12 mt-4">
                                         <h5 class="border-bottom pb-2 mb-3">Guardian Information</h5>
                                     </div>
 
@@ -263,32 +266,25 @@
                                     </div>
 
                                     <!-- Academic Information -->
-                                    <div class="col-12 mt-4 card-header bg-warning text-dark">
+                                    <div class="col-12 mt-4">
                                         <h5 class="border-bottom pb-2 mb-3">Academic Information</h5>
                                     </div>
 
                                     <div class="col-md-6 mb-3">
                                         <label class="form-label">Grade <span class="text-danger">*</span></label>
-                                        <select name="grade_id" class="form-select" required>
+                                        <select name="grade_id" id="gradeSelect" class="form-select" required>
                                             <option value="">Select Grade</option>
                                             <!-- Grades will be populated via JavaScript -->
                                         </select>
                                     </div>
-                                    <div class="col-md-6 mb-3">
-                                        <label for="class_type" class="form-label">
-                                            <i class="fas fa-chalkboard-teacher me-2"></i>
-                                            Class Type <span class="text-danger">*</span>
-                                        </label>
 
-                                        <select name="class_type" id="class_type" class="form-select" required>
+                                    <div class="col-md-6 mb-3">
+                                        <label class="form-label">Class Type <span class="text-danger">*</span></label>
+                                        <select name="class_type" class="form-select" required>
                                             <option value="">Select Class Type</option>
                                             <option value="online">Online</option>
                                             <option value="offline">Offline</option>
                                         </select>
-
-                                        <div class="invalid-feedback">
-                                            Please select a class type
-                                        </div>
                                     </div>
 
                                     <div class="col-md-6 mb-3">
@@ -302,6 +298,51 @@
                                             <option value="0">No</option>
                                             <option value="1">Yes</option>
                                         </select>
+                                    </div>
+
+                                    <!-- Status Information -->
+                                    <div class="col-12 mt-4">
+                                        <h5 class="border-bottom pb-2 mb-3">Status Information</h5>
+                                    </div>
+
+                                    <div class="col-md-4 mb-3">
+                                        <label class="form-label">Active Status</label>
+                                        <select name="is_active" class="form-select">
+                                            <option value="1">Active</option>
+                                            <option value="0">Inactive</option>
+                                        </select>
+                                    </div>
+
+                                    <div class="col-md-4 mb-3">
+                                        <label class="form-label">Permanent QR Active</label>
+                                        <select name="permanent_qr_active" class="form-select" disabled>
+                                            <option value="1">Yes</option>
+                                            <option value="0">No</option>
+                                        </select>
+                                    </div>
+
+                                    <div class="col-md-4 mb-3">
+                                        <label class="form-label">Student Disabled</label>
+                                        <select name="student_disable" class="form-select" disabled>
+                                            <option value="0">No</option>
+                                            <option value="1">Yes</option>
+                                        </select>
+                                    </div>
+
+                                    <!-- QR Code Information (Read-only) -->
+                                    <div class="col-12 mt-4">
+                                        <h5 class="border-bottom pb-2 mb-3">QR Code Information</h5>
+                                    </div>
+
+                                    <div class="col-md-6 mb-3">
+                                        <label class="form-label">Temporary QR Code</label>
+                                        <input type="text" name="temporary_qr_code" class="form-control" readonly>
+                                    </div>
+
+                                    <div class="col-md-6 mb-3">
+                                        <label class="form-label">QR Expire Date</label>
+                                        <input type="datetime-local" name="temporary_qr_code_expire_date"
+                                            class="form-control" readonly>
                                     </div>
 
                                     <!-- Submit Button -->
@@ -367,320 +408,246 @@
 
 @push('scripts')
     <script>
+        // Global variables
         let studentImageUrl = null;
         let cameraStream = null;
         let selectedQuickImageId = null;
-        let currentCustomId = '';
+        let currentStudentId = null;
 
-        // ================= INITIALIZATION =================
         document.addEventListener('DOMContentLoaded', function () {
-            // Get custom_id from URL: http://127.0.0.1:8000/students/SA10095/edit
+            // Get student ID from URL (last segment)
             const pathSegments = window.location.pathname.split('/');
-            currentCustomId = pathSegments[pathSegments.length - 2]; // Get SA10095 from URL
+            currentStudentId = pathSegments[pathSegments.length - 2]; // Get ID from /students/{id}/edit
 
-            console.log('Loading student with custom_id:', currentCustomId);
-            loadStudentData(currentCustomId);
-            loadGrades();
+            console.log('Loading student with ID:', currentStudentId);
+
+            // Initialize
+            loadGrades().then(() => {
+                loadStudentData(currentStudentId);
+            });
             initializeEventListeners();
         });
-
-        // Add this function for debugging
-        function debugStudentData(student) {
-            console.log('🔧 DEBUG - Student Data Structure:');
-            console.log('====================================');
-
-            // Log all properties
-            Object.keys(student).forEach(key => {
-                const value = student[key];
-                const type = typeof value;
-                console.log(`${key}:`, value, `[${type}]`);
-            });
-
-            // Specifically check for class_type
-            console.log('====================================');
-            console.log('Class Type Analysis:');
-            console.log('  - class_type exists?', 'class_type' in student);
-            console.log('  - class_type value:', student.class_type);
-            console.log('  - class_type type:', typeof student.class_type);
-            console.log('====================================');
-        }
-
-        // Then modify loadStudentData to call the debug function:
-        async function loadStudentData(customId) {
-            try {
-                showLoadingState();
-
-                console.log('🔍 Fetching student data for custom_id:', customId);
-
-                const response = await fetch(`/api/students/search/${customId}`);
-                console.log('📡 API Response status:', response.status);
-
-                if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status}`);
-                }
-
-                const result = await response.json();
-                console.log('📦 Full API Response:', result);
-
-                if (result.status === 'success' && result.data) {
-                    console.log('✅ Student data received:', result.data);
-
-                    // Debug the data structure
-                    debugStudentData(result.data);
-
-                    populateForm(result.data);
-                    showContentState();
-                    showAlert('Student data loaded successfully', 'success');
-                } else {
-                    throw new Error(result.message || 'Student not found');
-                }
-            } catch (error) {
-                console.error('❌ Error loading student data:', error);
-                showErrorState('Failed to load student data: ' + error.message);
-            }
-        }
-
-
-        // ================= POPULATE FORM =================
-        function populateForm(student) {
-            try {
-                console.log('🎯 Populating form with student data:', student);
-                console.log('📊 Full student object structure:', Object.keys(student));
-
-                if (!student) {
-                    console.error('❌ Student data is null or undefined');
-                    return;
-                }
-
-                // Display Student ID (read-only)
-                const displayCustomId = document.getElementById('displayCustomId');
-                if (displayCustomId) {
-                    displayCustomId.textContent = student.custom_id || 'N/A';
-                    console.log('📝 Student ID:', student.custom_id);
-                }
-
-                // Set image
-                if (student.img_url) {
-                    studentImageUrl = student.img_url;
-                    const studentPhoto = document.getElementById('studentImagePreview');
-                    if (studentPhoto) {
-                        studentPhoto.src = student.img_url;
-                        studentPhoto.style.display = 'block';
-                        document.getElementById('imagePlaceholder').style.display = 'none';
-                        console.log('🖼️ Image URL set:', student.img_url);
-                    }
-                } else {
-                    console.log('❌ No image URL found');
-                }
-
-                // Personal Information - Text inputs
-                const fields = [
-                    { name: 'fname', value: student.fname, label: 'First Name' },
-                    { name: 'lname', value: student.lname, label: 'Last Name' },
-                    { name: 'mobile', value: student.mobile, label: 'Mobile' },
-                    { name: 'whatsapp_mobile', value: student.whatsapp_mobile, label: 'WhatsApp' },
-                    { name: 'email', value: student.email, label: 'Email' },
-                    { name: 'nic', value: student.nic, label: 'NIC' },
-                    { name: 'address1', value: student.address1, label: 'Address1' },
-                    { name: 'address2', value: student.address2, label: 'Address2' },
-                    { name: 'address3', value: student.address3, label: 'Address3' },
-                    { name: 'guardian_fname', value: student.guardian_fname, label: 'Guardian First Name' },
-                    { name: 'guardian_lname', value: student.guardian_lname, label: 'Guardian Last Name' },
-                    { name: 'guardian_mobile', value: student.guardian_mobile, label: 'Guardian Mobile' },
-                    { name: 'guardian_nic', value: student.guardian_nic, label: 'Guardian NIC' },
-                    { name: 'student_school', value: student.student_school, label: 'School' }
-                ];
-
-                // Populate text inputs
-                fields.forEach(field => {
-                    const input = document.querySelector(`input[name="${field.name}"]`);
-                    if (input) {
-                        input.value = field.value || '';
-                        console.log(`✅ ${field.label}:`, field.value, '-> Input value:', input.value);
-                    } else {
-                        console.error(`❌ Input field not found: ${field.name}`);
-                    }
-                });
-
-                // Fix birthday field - Convert DD/MM/YYYY to YYYY-MM-DD
-                const bdayInput = document.querySelector('input[name="bday"]');
-                if (bdayInput) {
-                    if (student.bday) {
-                        let formattedDate = '';
-
-                        // Check for YYYY-MM-DD format (2025-11-01)
-                        if (student.bday.match(/^\d{4}-\d{2}-\d{2}$/)) {
-                            formattedDate = student.bday;
-                            console.log('🎂 Birthday (YYYY-MM-DD format):', student.bday, '-> Using as is:', formattedDate);
-                        }
-                        // Check for DD/MM/YYYY format (08/12/2025)
-                        else if (student.bday.match(/^\d{2}\/\d{2}\/\d{4}$/)) {
-                            const [day, month, year] = student.bday.split('/');
-                            formattedDate = `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
-                            console.log('🎂 Birthday (DD/MM/YYYY format):', student.bday, '-> Converted to:', formattedDate);
-                        }
-                        // Try to parse any other date format
-                        else {
-                            const dateObj = new Date(student.bday);
-                            if (!isNaN(dateObj.getTime())) {
-                                formattedDate = dateObj.toISOString().split('T')[0];
-                                console.log('🎂 Birthday (other format):', student.bday, '-> Converted to:', formattedDate);
-                            } else {
-                                console.log('❌ Invalid birthday format:', student.bday);
-                                formattedDate = '';
-                            }
-                        }
-
-                        bdayInput.value = formattedDate;
-                    } else {
-                        console.log('❌ No birthday data');
-                        bdayInput.value = '';
-                    }
-                }
-
-                // Fix gender field - Convert "Male" to "male"
-                const genderSelect = document.querySelector('select[name="gender"]');
-                if (genderSelect) {
-                    // Convert to lowercase to match option values
-                    const genderValue = student.gender ? student.gender.toLowerCase() : '';
-                    genderSelect.value = genderValue;
-                    console.log('⚧ Gender:', student.gender, '-> Converted to:', genderValue, '-> Selected value:', genderSelect.value);
-                }
-
-                // Fix Grade field - Wait for grades to load then set value
-                const gradeSelect = document.querySelector('select[name="grade_id"]');
-                if (gradeSelect) {
-                    // Check if grades are loaded, if not wait a bit
-                    if (gradeSelect.options.length > 1) {
-                        gradeSelect.value = student.grade_id || '';
-                        console.log('📚 Grade ID:', student.grade_id, '-> Selected value:', gradeSelect.value);
-                    } else {
-                        console.log('⏳ Grades not loaded yet, waiting...');
-                        // Wait for grades to load then set value
-                        setTimeout(() => {
-                            gradeSelect.value = student.grade_id || '';
-                            console.log('📚 Grade ID (delayed):', student.grade_id, '-> Selected value:', gradeSelect.value);
-                        }, 500);
-                    }
-                }
-
-                // DEBUG: Log all possible class type related fields
-                console.log('🔍 Searching for class_type field in student data:');
-                Object.keys(student).forEach(key => {
-                    if (key.toLowerCase().includes('class')) {
-                        console.log(`   Found: ${key} = ${student[key]}`);
-                    }
-                });
-
-                // Enhanced class type handling
-                const classTypeSelect = document.querySelector('select[name="class_type"]');
-                if (classTypeSelect) {
-                    // Try different possible field names
-                    let classTypeValue = '';
-
-                    // Direct field
-                    if (student.class_type) {
-                        classTypeValue = student.class_type;
-                    }
-                    // Alternative field names
-                    else if (student.classType) {
-                        classTypeValue = student.classType;
-                    }
-                    else if (student.class_type_id) {
-                        classTypeValue = student.class_type_id;
-                    }
-                    else if (student.class_type_name) {
-                        classTypeValue = student.class_type_name;
-                    }
-
-                    // Clean and set the value
-                    if (classTypeValue) {
-                        // Convert to lowercase and trim
-                        const cleanValue = classTypeValue.toString().toLowerCase().trim();
-
-                        // Map possible values to our options
-                        if (cleanValue === 'online' || cleanValue === 'offline') {
-                            classTypeSelect.value = cleanValue;
-                        } else if (cleanValue === '1' || cleanValue === 'online') {
-                            classTypeSelect.value = 'online';
-                        } else if (cleanValue === '0' || cleanValue === 'offline') {
-                            classTypeSelect.value = 'offline';
-                        } else {
-                            console.warn(`⚠️ Unknown class type value: "${classTypeValue}"`);
-                            classTypeSelect.value = ''; // Default to empty
-                        }
-
-                        console.log('🏫 Class Type:', classTypeValue, '-> Cleaned to:', cleanValue, '-> Selected:', classTypeSelect.value);
-                    } else {
-                        console.log('🏫 No class type data found in student object');
-                        classTypeSelect.value = ''; // Default to empty
-                    }
-                }
-
-                // Handle boolean selects
-                const admissionSelect = document.querySelector('select[name="admission"]');
-                if (admissionSelect) {
-                    // Convert various boolean representations
-                    if (student.admission === true || student.admission === 1 || student.admission === '1') {
-                        admissionSelect.value = '1';
-                    } else {
-                        admissionSelect.value = '0';
-                    }
-                    console.log('🎫 Admission:', student.admission, '-> Selected value:', admissionSelect.value);
-                }
-
-                // DEBUG: Log the final form state
-                console.log('📋 Final form state:');
-                console.log('  - Class Type select value:', classTypeSelect ? classTypeSelect.value : 'N/A');
-                console.log('  - Grade select value:', gradeSelect ? gradeSelect.value : 'N/A');
-                console.log('  - Gender select value:', genderSelect ? genderSelect.value : 'N/A');
-
-                console.log('✅ Form population completed successfully');
-
-            } catch (error) {
-                console.error('❌ Error in populateForm:', error);
-                console.error('Error details:', error.message, error.stack);
-            }
-        }
 
         // ================= LOAD GRADES =================
         async function loadGrades() {
             try {
+                console.log('Loading grades...');
                 const response = await fetch('/api/grades/dropdown');
                 if (!response.ok) throw new Error('Failed to fetch grades');
 
-                const res = await response.json();
-                const data = res.data || res;
+                const result = await response.json();
+                console.log('Grades response:', result);
 
-                const gradeSelect = document.querySelector('select[name="grade_id"]');
-                let gradesHtml = '<option value="">Select Grade</option>';
+                const grades = result.data || result;
 
-                if (Array.isArray(data) && data.length > 0) {
-                    data.forEach(g => {
-                        gradesHtml += `<option value="${g.id}">Grade ${g.grade_name}</option>`;
+                const gradeSelect = document.getElementById('gradeSelect');
+                if (!gradeSelect) return;
+
+                let options = '<option value="">Select Grade</option>';
+
+                if (Array.isArray(grades)) {
+                    grades.forEach(grade => {
+                        const gradeName = grade.grade_name || grade.name || grade.grade;
+                        options += `<option value="${grade.id}">Grade ${gradeName}</option>`;
+                    });
+                } else if (grades && typeof grades === 'object') {
+                    // Handle object format
+                    Object.values(grades).forEach(grade => {
+                        const gradeName = grade.grade_name || grade.name || grade.grade;
+                        options += `<option value="${grade.id}">Grade ${gradeName}</option>`;
                     });
                 }
-                gradeSelect.innerHTML = gradesHtml;
-            } catch (e) {
-                console.error('Error loading grades:', e);
+
+                gradeSelect.innerHTML = options;
+                console.log('Grades loaded successfully');
+            } catch (error) {
+                console.error('Error loading grades:', error);
+            }
+        }
+
+        // ================= LOAD STUDENT DATA =================
+        async function loadStudentData(studentId) {
+            try {
+                showLoadingState();
+
+                const response = await fetch(`/api/students/${studentId}`, {
+                    headers: {
+                        'Accept': 'application/json',
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+                    }
+                });
+
+                const result = await response.json();
+                console.log('Student API Response:', result);
+
+                if (result.status === 'success' && result.data) {
+                    console.log('Student data loaded:', result.data);
+                    // Give a small delay for grades to be populated
+                    setTimeout(() => {
+                        populateForm(result.data);
+                    }, 100);
+                    showContentState();
+                } else {
+                    throw new Error(result.message || 'Student not found');
+                }
+            } catch (error) {
+                console.error('Error loading student:', error);
+                showErrorState('Failed to load student data: ' + error.message);
+            }
+        }
+
+        // ================= POPULATE FORM =================
+        function populateForm(student) {
+            try {
+                console.log('Populating form with student:', student);
+
+                // Display Student ID
+                document.getElementById('displayCustomId').textContent = student.custom_id || 'N/A';
+                document.getElementById('customId').value = student.custom_id || '';
+
+                // Set image
+                if (student.img_url) {
+                    studentImageUrl = student.img_url;
+                    updateImagePreview(student.img_url, 'Existing Image');
+                }
+
+                // Personal Information
+                setFieldValue('full_name', student.full_name);
+                setFieldValue('initial_name', student.initial_name);
+                setFieldValue('mobile', student.mobile);
+                setFieldValue('whatsapp_mobile', student.whatsapp_mobile);
+                setFieldValue('email', student.email);
+                setFieldValue('nic', student.nic);
+
+                // Birthday - Convert to YYYY-MM-DD for date input
+                if (student.bday) {
+                    const bdayInput = document.querySelector('input[name="bday"]');
+                    if (bdayInput) {
+                        let formattedDate = '';
+                        if (student.bday.match(/^\d{4}-\d{2}-\d{2}$/)) {
+                            formattedDate = student.bday;
+                        } else {
+                            const date = new Date(student.bday);
+                            if (!isNaN(date.getTime())) {
+                                formattedDate = date.toISOString().split('T')[0];
+                            }
+                        }
+                        bdayInput.value = formattedDate;
+                        console.log('Birthday set to:', formattedDate);
+                    }
+                }
+
+                // Gender
+                setSelectValue('gender', student.gender ? student.gender.toLowerCase() : '');
+
+                // Address
+                setFieldValue('address1', student.address1);
+                setFieldValue('address2', student.address2);
+                setFieldValue('address3', student.address3);
+
+                // Guardian
+                setFieldValue('guardian_fname', student.guardian_fname);
+                setFieldValue('guardian_lname', student.guardian_lname);
+                setFieldValue('guardian_mobile', student.guardian_mobile);
+                setFieldValue('guardian_nic', student.guardian_nic);
+
+                // Academic - Grade
+                console.log('Setting grade_id:', student.grade_id);
+                setSelectValue('grade_id', student.grade_id);
+
+                // Class Type
+                console.log('Setting class_type:', student.class_type);
+                setSelectValue('class_type', student.class_type ? student.class_type.toLowerCase() : '');
+
+                // School
+                setFieldValue('student_school', student.student_school);
+
+                // Boolean fields - Make sure they're properly set
+                console.log('Setting admission:', student.admission);
+                setSelectValue('admission', student.admission ? '1' : '0');
+
+                console.log('Setting is_active:', student.is_active);
+                setSelectValue('is_active', student.is_active ? '1' : '0');
+
+                console.log('Setting permanent_qr_active:', student.permanent_qr_active);
+                setSelectValue('permanent_qr_active', student.permanent_qr_active ? '1' : '0');
+
+                console.log('Setting student_disable:', student.student_disable);
+                setSelectValue('student_disable', student.student_disable ? '1' : '0');
+
+                // QR Code Information (Read-only)
+                setFieldValue('temporary_qr_code', student.temporary_qr_code);
+
+                if (student.temporary_qr_code_expire_date) {
+                    const expireInput = document.querySelector('input[name="temporary_qr_code_expire_date"]');
+                    if (expireInput) {
+                        const date = new Date(student.temporary_qr_code_expire_date);
+                        if (!isNaN(date.getTime())) {
+                            expireInput.value = date.toISOString().slice(0, 16);
+                        }
+                    }
+                }
+
+                console.log('Form populated successfully');
+            } catch (error) {
+                console.error('Error populating form:', error);
+            }
+        }
+
+        // Helper function to set input field value
+        function setFieldValue(name, value) {
+            const input = document.querySelector(`input[name="${name}"]`);
+            if (input) {
+                input.value = value || '';
+            }
+        }
+
+        // Helper function to set select field value
+        function setSelectValue(name, value) {
+            const select = document.querySelector(`select[name="${name}"]`);
+            if (select) {
+                // Handle null/undefined
+                if (value === null || value === undefined) {
+                    select.value = '';
+                    return;
+                }
+
+                // Convert to string for comparison
+                const stringValue = String(value);
+
+                // Check if this value exists in options
+                let optionExists = false;
+                for (let i = 0; i < select.options.length; i++) {
+                    if (String(select.options[i].value) === stringValue) {
+                        optionExists = true;
+                        break;
+                    }
+                }
+
+                if (optionExists) {
+                    select.value = stringValue;
+                    console.log(`Set ${name} to:`, stringValue);
+                } else {
+                    console.warn(`Value ${stringValue} not found in ${name} options`);
+                }
             }
         }
 
         // ================= EVENT LISTENERS =================
         function initializeEventListeners() {
-            // Camera functionality
-            document.getElementById('openCameraBtn').addEventListener('click', openCamera);
-            document.getElementById('closeCameraBtn').addEventListener('click', closeCamera);
-            document.getElementById('captureBtn').addEventListener('click', captureImage);
+            // Camera
+            document.getElementById('openCameraBtn')?.addEventListener('click', openCamera);
+            document.getElementById('closeCameraBtn')?.addEventListener('click', closeCamera);
+            document.getElementById('captureBtn')?.addEventListener('click', captureImage);
 
             // File upload
-            document.getElementById('fileInput').addEventListener('change', handleFileUpload);
+            document.getElementById('fileInput')?.addEventListener('change', handleFileUpload);
 
             // Quick image search
-            document.getElementById('searchQuickImage').addEventListener('click', searchQuickImages);
+            document.getElementById('searchQuickImage')?.addEventListener('click', searchQuickImages);
 
             // Form submission
-            document.getElementById('studentEditForm').addEventListener('submit', handleFormSubmit);
+            document.getElementById('studentEditForm')?.addEventListener('submit', handleFormSubmit);
         }
 
         // ================= CAMERA FUNCTIONS =================
@@ -695,17 +662,20 @@
                 });
 
                 const cameraView = document.getElementById('cameraView');
-                cameraView.srcObject = cameraStream;
+                if (cameraView) {
+                    cameraView.srcObject = cameraStream;
+                }
 
                 document.getElementById('cameraWrapper').style.display = 'block';
                 document.getElementById('openCameraBtn').style.display = 'none';
                 document.getElementById('cameraError').style.display = 'none';
-
-            } catch (e) {
+            } catch (error) {
                 const cameraError = document.getElementById('cameraError');
-                cameraError.innerText = 'Camera access denied or not available. Please check permissions.';
-                cameraError.style.display = 'block';
-                console.error('Camera error:', e);
+                if (cameraError) {
+                    cameraError.innerText = 'Camera access denied or not available. Please check permissions.';
+                    cameraError.style.display = 'block';
+                }
+                console.error('Camera error:', error);
             }
         }
 
@@ -720,37 +690,78 @@
 
         function captureImage() {
             const video = document.getElementById('cameraView');
+            if (!video) return;
+
             const canvas = document.createElement('canvas');
             canvas.width = video.videoWidth;
             canvas.height = video.videoHeight;
             canvas.getContext('2d').drawImage(video, 0, 0);
 
             canvas.toBlob(blob => {
-                const file = new File([blob], "student_capture.jpg", { type: "image/jpeg" });
+                const file = new File([blob], 'student_capture.jpg', { type: 'image/jpeg' });
                 uploadImage(file, 'camera');
                 closeCamera();
-            }, "image/jpeg", 0.8);
+            }, 'image/jpeg', 0.8);
         }
 
         // ================= FILE UPLOAD =================
         function handleFileUpload(e) {
             const file = e.target.files[0];
-            if (file) {
-                if (!file.type.startsWith('image/')) {
-                    showAlert('Please select a valid image file', 'danger');
-                    return;
+            if (!file) return;
+
+            // Validate file type
+            if (!file.type.startsWith('image/')) {
+                showAlert('Please select a valid image file', 'danger');
+                return;
+            }
+
+            // Validate file size (5MB max)
+            if (file.size > 5 * 1024 * 1024) {
+                showAlert('Image size should be less than 5MB', 'danger');
+                return;
+            }
+
+            uploadImage(file, 'file upload');
+        }
+
+        // ================= IMAGE UPLOAD =================
+        async function uploadImage(file, source) {
+            try {
+                showAlert('Uploading image...', 'info');
+
+                const formData = new FormData();
+                formData.append('image', file);
+
+                const response = await fetch('/api/image-upload/upload', {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+                    },
+                    body: formData
+                });
+
+                const result = await response.json();
+
+                if (result.status === 'success') {
+                    const baseUrl = '{{ url("/") }}';
+                    studentImageUrl = result.image_url.startsWith('http')
+                        ? result.image_url
+                        : baseUrl + '/uploads/images/' + result.image_url;
+
+                    updateImagePreview(studentImageUrl, `Uploaded via ${source}`);
+                    showAlert('Image uploaded successfully!', 'success');
+                } else {
+                    throw new Error(result.message || 'Upload failed');
                 }
-                if (file.size > 5 * 1024 * 1024) {
-                    showAlert('Image size should be less than 5MB', 'danger');
-                    return;
-                }
-                uploadImage(file, 'file');
+            } catch (error) {
+                console.error('Upload error:', error);
+                showAlert('Failed to upload image: ' + error.message, 'danger');
             }
         }
 
         // ================= QUICK IMAGE FUNCTIONS =================
         async function searchQuickImages() {
-            const searchTerm = document.getElementById('quickImageSearch').value.trim();
+            const searchTerm = document.getElementById('quickImageSearch')?.value.trim();
             if (!searchTerm) {
                 showAlert('Please enter a custom ID to search', 'warning');
                 return;
@@ -760,21 +771,55 @@
                 const response = await fetch('/api/quick-photos/active');
                 if (!response.ok) throw new Error('Failed to fetch quick images');
 
-                const res = await response.json();
-                const quickImages = res.data || res;
+                const result = await response.json();
+                const quickImages = result.data || result;
 
-                const filteredImages = quickImages.filter(img =>
+                // Filter images by custom_id
+                const filtered = quickImages.filter(img =>
                     img.custom_id && img.custom_id.toLowerCase().includes(searchTerm.toLowerCase())
                 );
 
-                displayQuickImages(filteredImages);
-            } catch (e) {
-                console.error('Error searching quick images:', e);
+                displayQuickImages(filtered);
+            } catch (error) {
+                console.error('Error searching quick images:', error);
                 showAlert('Failed to search quick images', 'danger');
             }
         }
 
-        function selectQuickImage(id, imageUrl, customId) {
+        function displayQuickImages(images) {
+            const resultsContainer = document.getElementById('quickImageResults');
+            if (!resultsContainer) return;
+
+            if (images.length === 0) {
+                resultsContainer.innerHTML = '<p class="text-muted text-center">No quick images found</p>';
+                return;
+            }
+
+            const baseUrl = '{{ url("/") }}';
+
+            resultsContainer.innerHTML = images.map(img => {
+                const imageUrl = img.quick_img.startsWith('http')
+                    ? img.quick_img
+                    : baseUrl + '/uploads/images/' + img.quick_img;
+
+                return `
+                        <div class="quick-image-item card mb-2 p-2" onclick="selectQuickImage(${img.id}, '${imageUrl}', '${img.custom_id || 'No ID'}')">
+                            <div class="row g-2 align-items-center">
+                                <div class="col-3">
+                                    <img src="${imageUrl}" class="img-fluid rounded" style="height: 60px; object-fit: cover;">
+                                </div>
+                                <div class="col-9">
+                                    <small class="fw-bold">ID: ${img.custom_id || 'No ID'}</small><br>
+                                    <small class="text-muted">Grade: ${img.grade?.grade_name || 'N/A'}</small>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+            }).join('');
+        }
+
+        // Make selectQuickImage globally available
+        window.selectQuickImage = function (id, imageUrl, customId) {
             // Remove previous selection
             document.querySelectorAll('.quick-image-item').forEach(item => {
                 item.classList.remove('selected');
@@ -791,87 +836,49 @@
             updateImagePreview(imageUrl, `Quick Image: ${customId}`);
 
             showAlert(`Quick image "${customId}" selected`, 'success');
-        }
-
-        // ================= IMAGE UPLOAD =================
-        async function uploadImage(file, source) {
-            try {
-                showAlert('Uploading image...', 'info');
-
-                const fd = new FormData();
-                fd.append('image', file);
-
-                const res = await fetch('/api/image-upload/upload', {
-                    method: 'POST',
-                    headers: {
-                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
-                    },
-                    body: fd
-                });
-
-                const data = await res.json();
-
-                if (data.status === 'success') {
-                    studentImageUrl = "{{ url('/uploads/images') }}/" + data.image_url;
-                    updateImagePreview(studentImageUrl, `Uploaded via ${source}`);
-                    showAlert('Image uploaded successfully!', 'success');
-                } else {
-                    throw new Error(data.message || 'Upload failed');
-                }
-            } catch (e) {
-                console.error('Upload error:', e);
-                showAlert('Failed to upload image: ' + e.message, 'danger');
-            }
-        }
-
-
-        function updateImagePreview(imageUrl, source) {
-            const preview = document.getElementById('studentImagePreview');
-            const placeholder = document.getElementById('imagePlaceholder');
-            const imageInfo = document.getElementById('selectedImageInfo');
-
-            preview.src = imageUrl;
-            preview.style.display = 'block';
-            placeholder.style.display = 'none';
-            imageInfo.style.display = 'block';
-            document.getElementById('imageSource').textContent = source;
-        }
+        };
 
         // ================= FORM SUBMISSION =================
         async function handleFormSubmit(e) {
             e.preventDefault();
 
+            // Validate image
             if (!studentImageUrl) {
                 showAlert('Please upload a student image', 'warning');
                 return;
             }
 
+            // Collect form data
             const formData = new FormData(e.target);
             const studentData = {
-                img_url: studentImageUrl,
-                is_active: true
+                img_url: studentImageUrl
             };
 
             // Convert FormData to object with proper type conversion
             for (let [key, value] of formData.entries()) {
-                if (value) {
-                    // Convert string '0'/'1' to boolean for specific fields
-                    if (['admission'].includes(key)) {
-                        studentData[key] = value === '1';
-                    } else {
+                if (key !== '_token' && key !== '_method') {
+                    // Convert boolean fields - ensure they're properly set
+                    if (['admission', 'is_active', 'permanent_qr_active', 'student_disable'].includes(key)) {
+                        studentData[key] = value === '1' ? true : false;
+                        console.log(`Setting ${key} to:`, studentData[key]);
+                    } else if (value) {
                         studentData[key] = value;
+                    } else {
+                        studentData[key] = null;
                     }
                 }
             }
 
+            console.log('Submitting student data:', studentData);
+
             try {
-                document.getElementById('submitBtn').disabled = true;
-                document.getElementById('submitBtn').innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Updating...';
+                // Disable submit button
+                const submitBtn = document.getElementById('submitBtn');
+                submitBtn.disabled = true;
+                submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Updating...';
 
-                console.log('Updating student data:', studentData);
-
-                // Update student using PUT request to correct API
-                const studentResponse = await fetch(`/api/students/${currentCustomId}`, {
+                // Send update request
+                const response = await fetch(`/api/students/${currentStudentId}`, {
                     method: 'PUT',
                     headers: {
                         'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
@@ -881,65 +888,66 @@
                     body: JSON.stringify(studentData)
                 });
 
-                console.log('Response status:', studentResponse.status);
+                const result = await response.json();
+                console.log('Update response:', result);
 
-                const studentResult = await studentResponse.json();
-                console.log('Response data:', studentResult);
-
-                if (studentResult.status === 'success') {
-                    // If quick image was used, deactivate it
+                if (result.status === 'success') {
+                    // Deactivate quick image if used
                     if (selectedQuickImageId) {
                         await deactivateQuickImage(selectedQuickImageId);
                     }
 
                     showAlert('Student updated successfully!', 'success');
 
-                    // Redirect back to students list after short delay
+                    // Redirect after delay
                     setTimeout(() => {
-                        window.location.href = "{{ route('students.index') }}";
+                        window.location.href = '{{ route("students.index") }}';
                     }, 1500);
-
-                } else if (studentResult.status === 'error' && studentResult.errors) {
-                    // Handle validation errors
-                    const errorMessages = Object.values(studentResult.errors).flat().join(', ');
-                    throw new Error('Validation failed: ' + errorMessages);
                 } else {
-                    throw new Error(studentResult.message || 'Update failed');
+                    throw new Error(result.message || 'Update failed');
                 }
+            } catch (error) {
+                console.error('Update error:', error);
+                showAlert('Failed to update student: ' + error.message, 'danger');
 
-            } catch (e) {
-                console.error('Update error:', e);
-                console.error('Full error details:', {
-                    message: e.message,
-                    studentData: studentData
-                });
-                showAlert('Failed to update student: ' + e.message, 'danger');
-            } finally {
-                document.getElementById('submitBtn').disabled = false;
-                document.getElementById('submitBtn').innerHTML = '<i class="fas fa-save me-2"></i>Update Student';
+                // Re-enable submit button
+                const submitBtn = document.getElementById('submitBtn');
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = '<i class="fas fa-save me-2"></i>Update Student';
             }
         }
 
         // ================= DEACTIVATE QUICK IMAGE =================
         async function deactivateQuickImage(quickImageId) {
             try {
-                const response = await fetch(`/api/quick-photos/${quickImageId}`, {
+                await fetch(`/api/quick-photos/${quickImageId}`, {
                     method: 'DELETE',
                     headers: {
                         'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
                         'Accept': 'application/json'
                     }
                 });
-
-                if (!response.ok) {
-                    console.warn('Failed to deactivate quick image, but student was updated');
-                }
-            } catch (e) {
-                console.error('Error deactivating quick image:', e);
+            } catch (error) {
+                console.warn('Failed to deactivate quick image:', error);
             }
         }
 
         // ================= UTILITY FUNCTIONS =================
+        function updateImagePreview(imageUrl, source) {
+            const preview = document.getElementById('studentImagePreview');
+            const placeholder = document.getElementById('imagePlaceholder');
+            const imageInfo = document.getElementById('selectedImageInfo');
+            const imageSource = document.getElementById('imageSource');
+
+            if (preview && placeholder && imageInfo && imageSource) {
+                preview.src = imageUrl;
+                preview.style.display = 'block';
+                placeholder.style.display = 'none';
+                imageInfo.style.display = 'block';
+                imageSource.textContent = source;
+            }
+        }
+
         function showLoadingState() {
             document.getElementById('loadingSpinner').style.display = 'block';
             document.getElementById('errorMessage').style.display = 'none';
@@ -960,49 +968,27 @@
         }
 
         function showAlert(message, type) {
+            // Remove existing alerts
+            const existingAlerts = document.querySelectorAll('.alert');
+            existingAlerts.forEach(alert => alert.remove());
+
+            // Create new alert
             const alertDiv = document.createElement('div');
-            alertDiv.className = `alert alert-${type} alert-dismissible fade show`;
+            alertDiv.className = `alert alert-${type} alert-dismissible fade show position-fixed top-0 end-0 m-3`;
+            alertDiv.style.zIndex = '9999';
             alertDiv.innerHTML = `
-                                                        <strong>${type === 'success' ? 'Success!' : type === 'warning' ? 'Warning!' : 'Error!'}</strong> ${message}
-                                                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-                                                    `;
+                    <strong>${type === 'success' ? 'Success!' : type === 'warning' ? 'Warning!' : 'Error!'}</strong> ${message}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                `;
 
-            document.querySelector('.card-body').insertBefore(alertDiv, document.querySelector('.card-body').firstChild);
+            document.body.appendChild(alertDiv);
 
+            // Auto remove after 5 seconds
             setTimeout(() => {
                 if (alertDiv.parentNode) {
                     alertDiv.remove();
                 }
             }, 5000);
-        }
-
-        function displayQuickImages(images) {
-            const resultsContainer = document.getElementById('quickImageResults');
-
-            if (images.length === 0) {
-                resultsContainer.innerHTML = '<p class="text-muted text-center">No quick images found</p>';
-                return;
-            }
-
-            resultsContainer.innerHTML = images.map(img => {
-                const imageUrl = img.quick_img.startsWith('http') ?
-                    img.quick_img :
-                    "{{ url('/uploads/images') }}/" + img.quick_img;
-
-                return `
-                                                            <div class="quick-image-item card mb-2 p-2" onclick="selectQuickImage(${img.id}, '${imageUrl}', '${img.custom_id || 'No ID'}')">
-                                                                <div class="row g-2 align-items-center">
-                                                                    <div class="col-3">
-                                                                        <img src="${imageUrl}" class="img-fluid rounded" style="height: 60px; object-fit: cover;">
-                                                                    </div>
-                                                                    <div class="col-9">
-                                                                        <small class="fw-bold">ID: ${img.custom_id || 'No ID'}</small><br>
-                                                                        <small class="text-muted">Grade: ${img.grade?.grade_name || 'N/A'}</small>
-                                                                    </div>
-                                                                </div>
-                                                            </div>
-                                                        `;
-            }).join('');
         }
     </script>
 @endpush

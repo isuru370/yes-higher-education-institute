@@ -3,8 +3,6 @@
 namespace App\Http\Controllers;
 
 use App\Services\StudentPaymentService;
-use Mike42\Escpos\Printer;
-use Mike42\Escpos\PrintConnectors\WindowsPrintConnector;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Support\Facades\Log;
 

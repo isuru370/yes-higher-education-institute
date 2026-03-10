@@ -240,7 +240,7 @@ class SystemUserService
 
         if (!$lastUser) {
             // If no users exist, start from SAE0001
-            return 'SAE0001';
+            return 'ADM0001';
         }
 
         // Extract the numeric part from the last custom_id
@@ -253,6 +253,6 @@ class SystemUserService
         $nextNumber = $lastNumber + 1;
 
         // Format with leading zeros (4 digits)
-        return 'SAE' . str_pad($nextNumber, 4, '0', STR_PAD_LEFT);
+        return 'ADM' . str_pad($nextNumber, 4, '0', STR_PAD_LEFT);
     }
 }

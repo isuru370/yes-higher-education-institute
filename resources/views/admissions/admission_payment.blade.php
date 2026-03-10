@@ -708,8 +708,7 @@
                 // 🔥 CRITICAL FIX: Handle boolean admission status correctly
                 admission: getBooleanValue(student.admission),
                 custom_id: student.custom_id || student.student_id || 'N/A',
-                fname: student.fname || student.first_name || '',
-                lname: student.lname || student.last_name || '',
+                lname: student.initial_name || student.last_name || '',
                 mobile: student.mobile || student.phone || student.telephone || 'N/A',
                 created_at: student.created_at || student.created_date || new Date().toISOString(),
                 grade: student.grade || student.grade_info || { grade_name: 'N/A' }
@@ -913,24 +912,24 @@
                 const rowClass = admissionStatus === true ? 'admission-paid' : 'admission-not-paid';
 
                 html += `
-                    <tr class="student-row ${rowClass}">
-                        <td>
-                            <input type="checkbox" ${isSelected ? 'checked' : ''} 
-                                   onchange="toggleStudentSelection(${student.id}, this)">
-                        </td>
-                        <td>${student.custom_id}</td>
-                        <td>${student.fname} ${student.lname}</td>
-                        <td>${student.grade ? student.grade.grade_name : 'N/A'}</td>
-                        <td>${student.mobile || 'N/A'}</td>
-                        <td class="sl-date">${registerDate}</td> <!-- Changed to Register Date -->
-                        <td>${statusBadge}</td>
-                        <td>
-                            <button class="btn btn-sm btn-outline-info" onclick="viewStudentAdmissions(${student.id}, '${student.custom_id}', '${student.fname} ${student.lname}')">
-                                <i class="fas fa-eye me-1"></i>View Admissions
-                            </button>
-                        </td>
-                    </tr>
-                `;
+                        <tr class="student-row ${rowClass}">
+                            <td>
+                                <input type="checkbox" ${isSelected ? 'checked' : ''} 
+                                       onchange="toggleStudentSelection(${student.id}, this)">
+                            </td>
+                            <td>${student.custom_id}</td>
+                            <td>${student.lname}</td>
+                            <td>${student.grade ? student.grade.grade_name : 'N/A'}</td>
+                            <td>${student.mobile || 'N/A'}</td>
+                            <td class="sl-date">${registerDate}</td> <!-- Changed to Register Date -->
+                            <td>${statusBadge}</td>
+                            <td>
+                                <button class="btn btn-sm btn-outline-info" onclick="viewStudentAdmissions(${student.id}, '${student.custom_id}', '${student.lname}')">
+                                    <i class="fas fa-eye me-1"></i>View Admissions
+                                </button>
+                            </td>
+                        </tr>
+                    `;
             });
 
             tableBody.innerHTML = html;
@@ -951,21 +950,21 @@
 
             // Previous button
             paginationHtml += `
-                <li class="page-item ${currentPage === 1 ? 'disabled' : ''}">
-                    <a class="page-link" href="#" onclick="changePage(${currentPage - 1})" aria-label="Previous">
-                        <span aria-hidden="true">&laquo;</span>
-                    </a>
-                </li>
-            `;
+                    <li class="page-item ${currentPage === 1 ? 'disabled' : ''}">
+                        <a class="page-link" href="#" onclick="changePage(${currentPage - 1})" aria-label="Previous">
+                            <span aria-hidden="true">&laquo;</span>
+                        </a>
+                    </li>
+                `;
 
             // Page numbers
             for (let i = 1; i <= totalPages; i++) {
                 if (i === 1 || i === totalPages || (i >= currentPage - 2 && i <= currentPage + 2)) {
                     paginationHtml += `
-                        <li class="page-item ${i === currentPage ? 'active' : ''}">
-                            <a class="page-link" href="#" onclick="changePage(${i})">${i}</a>
-                        </li>
-                    `;
+                            <li class="page-item ${i === currentPage ? 'active' : ''}">
+                                <a class="page-link" href="#" onclick="changePage(${i})">${i}</a>
+                            </li>
+                        `;
                 } else if (i === currentPage - 3 || i === currentPage + 3) {
                     paginationHtml += `<li class="page-item disabled"><span class="page-link">...</span></li>`;
                 }
@@ -973,12 +972,12 @@
 
             // Next button
             paginationHtml += `
-                <li class="page-item ${currentPage === totalPages ? 'disabled' : ''}">
-                    <a class="page-link" href="#" onclick="changePage(${currentPage + 1})" aria-label="Next">
-                        <span aria-hidden="true">&raquo;</span>
-                    </a>
-                </li>
-            `;
+                    <li class="page-item ${currentPage === totalPages ? 'disabled' : ''}">
+                        <a class="page-link" href="#" onclick="changePage(${currentPage + 1})" aria-label="Next">
+                            <span aria-hidden="true">&raquo;</span>
+                        </a>
+                    </li>
+                `;
 
             paginationContainer.innerHTML = paginationHtml;
         }
@@ -1030,13 +1029,13 @@
                         const paymentTime = formatTimeToSriLankan(payment.created_at);
 
                         admissionsHtml += `
-                            <tr>
-                                <td>${payment.admission_name}</td>
-                                <td>Rs. ${parseFloat(payment.amount).toLocaleString('en-LK')}</td>
-                                <td class="sl-date">${paymentDate}</td>
-                                <td class="sl-time">${paymentTime}</td>
-                            </tr>
-                        `;
+                                <tr>
+                                    <td>${payment.admission_name}</td>
+                                    <td>Rs. ${parseFloat(payment.amount).toLocaleString('en-LK')}</td>
+                                    <td class="sl-date">${paymentDate}</td>
+                                    <td class="sl-time">${paymentTime}</td>
+                                </tr>
+                            `;
                     });
 
                     admissionsBody.innerHTML = admissionsHtml;
@@ -1237,13 +1236,13 @@
             document.getElementById('studentsTableSection').style.display = 'none';
             document.getElementById('noStudentsMessage').style.display = 'block';
             document.getElementById('noStudentsMessage').innerHTML = `
-                <i class="fas fa-exclamation-triangle fa-3x text-danger mb-3"></i>
-                <h4 class="text-danger">Error Loading Students</h4>
-                <p class="text-muted">${message}</p>
-                <button class="btn btn-primary mt-3" onclick="loadAllStudents()">
-                    <i class="fas fa-redo me-2"></i>Try Again
-                </button>
-            `;
+                    <i class="fas fa-exclamation-triangle fa-3x text-danger mb-3"></i>
+                    <h4 class="text-danger">Error Loading Students</h4>
+                    <p class="text-muted">${message}</p>
+                    <button class="btn btn-primary mt-3" onclick="loadAllStudents()">
+                        <i class="fas fa-redo me-2"></i>Try Again
+                    </button>
+                `;
         }
 
         function showAlert(message, type) {
@@ -1253,9 +1252,9 @@
             const alertDiv = document.createElement('div');
             alertDiv.className = `alert alert-${type} alert-dismissible fade show`;
             alertDiv.innerHTML = `
-                ${message}
-                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-            `;
+                    ${message}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                `;
 
             document.querySelector('.card-body').insertBefore(alertDiv, document.querySelector('.card-body').firstChild);
 

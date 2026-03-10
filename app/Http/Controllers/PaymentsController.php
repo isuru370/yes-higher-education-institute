@@ -21,9 +21,9 @@ class PaymentsController extends Controller
         return $this->paymentService->fetchStudentPayments($student_id, $student_class_id);
     }
 
-        public function mobileReadStudentPayment($qr_code)
+    public function mobileReadStudentPayment(Request $request)
     {
-        return $this->paymentService->fetchStudentClassWisePayments($qr_code);
+        return $this->paymentService->fetchPaymentsByQRCode($request);
     }
 
     public function receiptPrint($payment_id)

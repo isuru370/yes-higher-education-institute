@@ -14,7 +14,7 @@ class CreateStudentRegistrationTable extends Migration
     public function up()
     {
         Schema::create('student_registration', function (Blueprint $table) {
-            $table->id('registration_id');
+            $table->id();
             $table->foreignId('student_id')->constrained('students')->onDelete('cascade');
             $table->foreignId('course_id')->constrained('course')->onDelete('cascade');
             $table->date('registration_date');

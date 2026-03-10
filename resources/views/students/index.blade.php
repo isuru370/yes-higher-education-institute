@@ -631,9 +631,9 @@
 
                 // Use placeholder icon if img_url is null or invalid
                 const avatarContent = student.img_url && isValidImageUrl(student.img_url) ?
-                    `<img src="${student.img_url}" alt="${student.fname} ${student.lname}" class="rounded-circle" style="width: 40px; height: 40px; object-fit: cover;">` :
+                    `<img src="${student.img_url}" alt="${student.initial_name}" class="rounded-circle" style="width: 40px; height: 40px; object-fit: cover;">` :
                     `<div class="avatar-sm bg-primary bg-gradient rounded-circle text-white d-flex align-items-center justify-content-center">
-                            <span class="fw-bold">${student.fname ? student.fname.charAt(0) : ''}${student.lname ? student.lname.charAt(0) : ''}</span>
+                            <span class="fw-bold">${student.full_name ? student.initial_name.charAt(0) : ''}${student.full_name ? student.initial_name.charAt(0) : ''}</span>
                         </div>`;
 
                 const row = `
@@ -643,7 +643,7 @@
                                 <div class="d-flex align-items-center">
                                     ${avatarContent}
                                     <div class="ms-3">
-                                        <h6 class="mb-0 fw-bold">${student.fname || ''} ${student.lname || ''}</h6>
+                                        <h6 class="mb-0 fw-bold">${student.initial_name || ''}</h6>
                                         <small class="text-muted">${student.custom_id || 'No ID'}</small>
                                     </div>
                                 </div>
@@ -678,20 +678,20 @@
                             <td class="text-center">
                                 <div class="btn-group btn-group-sm">
                                     <button class="btn btn-outline-primary rounded-start" title="View" 
-                                            onclick="viewStudent('${student.custom_id}')">
+                                            onclick="viewStudent('${student.id}')">
                                         <i class="fas fa-eye"></i>
                                     </button>
                                     <button class="btn btn-outline-warning" title="Edit" 
-                                            onclick="editStudent('${student.custom_id}')">
+                                            onclick="editStudent('${student.id}')">
                                         <i class="fas fa-edit"></i>
                                     </button>
                                     ${isActive ?
                         `<button class="btn btn-outline-danger rounded-end" title="Deactivate" 
-                                                onclick="showDeactivateModal(${student.id}, '${escapeHtml(student.fname)} ${escapeHtml(student.lname)}', '${escapeHtml(student.email || 'No email')}')">
+                                                onclick="showDeactivateModal(${student.id}, '${escapeHtml(student.full_name)} ${escapeHtml(student.lname)}', '${escapeHtml(student.email || 'No email')}')">
                                             <i class="fas fa-user-slash"></i>
                                         </button>` :
                         `<button class="btn btn-outline-success rounded-end" title="Activate" 
-                                                onclick="showActivateModal(${student.id}, '${escapeHtml(student.fname)} ${escapeHtml(student.lname)}', '${escapeHtml(student.email || 'No email')}')">
+                                                onclick="showActivateModal(${student.id}, '${escapeHtml(student.initial_name)} ${escapeHtml(student.lname)}', '${escapeHtml(student.email || 'No email')}')">
                                             <i class="fas fa-user-check"></i>
                                         </button>`
                     }
@@ -881,12 +881,12 @@
                 });
         }
 
-        function viewStudent(customId) {
-            window.location.href = `/students/${customId}`;
+        function viewStudent(studentId) {
+            window.location.href = `/students/${studentId}`;
         }
 
-        function editStudent(customId) {
-            window.location.href = `/students/${customId}/edit`;
+        function editStudent(studentId) {
+            window.location.href = `/students/${studentId}/edit`;
         }
 
         // Helper functions

@@ -30,6 +30,7 @@
                                     <input type="text" class="form-control" id="class_name" name="class_name" required>
                                     <div class="invalid-feedback" id="class_name_error"></div>
                                 </div>
+
                                 <!-- Teacher Percentage -->
                                 <div class="mb-3">
                                     <label for="teacher_percentage" class="form-label">
@@ -66,6 +67,21 @@
                                     </select>
                                     <div class="invalid-feedback" id="class_type_error"></div>
                                 </div>
+
+                                <!-- NEW: Medium Dropdown -->
+                                <div class="mb-3">
+                                    <label for="medium" class="form-label">
+                                        <i class="fas fa-language me-2"></i>Medium <span class="text-danger">*</span>
+                                    </label>
+                                    <select class="form-select" id="medium" name="medium" required>
+                                        <option value="">Select Medium</option>
+                                        <option value="sinhala">සිංහල (Sinhala)</option>
+                                        <option value="english">English</option>
+                                        <option value="tamil">தமிழ் (Tamil)</option>
+                                    </select>
+                                    <div class="invalid-feedback" id="medium_error"></div>
+                                </div>
+
                                 <!-- Grade Dropdown with Add Button -->
                                 <div class="mb-3">
                                     <label for="grade_id" class="form-label">Grade <span
@@ -491,7 +507,7 @@
                 submitForm();
             });
 
-
+            // Class type change event for default percentages
             const classTypeSelect = document.getElementById('class_type');
             const percentageInput = document.getElementById('teacher_percentage');
 
@@ -504,7 +520,6 @@
                     percentageInput.value = '';
                 }
             });
-
 
             // Grade modal events
             const saveGradeBtn = document.getElementById('saveGradeBtn');
@@ -679,20 +694,20 @@
 
             grades.forEach((grade, index) => {
                 const row = `
-                                                        <tr>
-                                                            <td class="fw-bold text-muted">${index + 1}</td>
-                                                            <td>Grade ${grade.grade_name}</td>
-                                                            <td>${new Date(grade.created_at).toLocaleDateString()}</td>
-                                                            <td class="text-center">
-                                                                <div class="btn-group btn-group-sm">
-                                                                    <button class="btn btn-outline-warning" title="Edit" 
-                                                                            onclick="showEditGradeModal(${grade.id}, '${escapeHtml(grade.grade_name)}')">
-                                                                        <i class="fas fa-edit"></i>
-                                                                    </button>
-                                                                </div>
-                                                            </td>
-                                                        </tr>
-                                                    `;
+                    <tr>
+                        <td class="fw-bold text-muted">${index + 1}</td>
+                        <td>Grade ${grade.grade_name}</td>
+                        <td>${new Date(grade.created_at).toLocaleDateString()}</td>
+                        <td class="text-center">
+                            <div class="btn-group btn-group-sm">
+                                <button class="btn btn-outline-warning" title="Edit" 
+                                        onclick="showEditGradeModal(${grade.id}, '${escapeHtml(grade.grade_name)}')">
+                                    <i class="fas fa-edit"></i>
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                `;
                 tbody.innerHTML += row;
             });
         }
@@ -772,20 +787,20 @@
 
             subjects.forEach((subject, index) => {
                 const row = `
-                                                        <tr>
-                                                            <td class="fw-bold text-muted">${index + 1}</td>
-                                                            <td>${subject.subject_name}</td>
-                                                            <td>${new Date(subject.created_at).toLocaleDateString()}</td>
-                                                            <td class="text-center">
-                                                                <div class="btn-group btn-group-sm">
-                                                                    <button class="btn btn-outline-warning" title="Edit" 
-                                                                            onclick="showEditSubjectModal(${subject.id}, '${escapeHtml(subject.subject_name)}')">
-                                                                        <i class="fas fa-edit"></i>
-                                                                    </button>
-                                                                </div>
-                                                            </td>
-                                                        </tr>
-                                                    `;
+                    <tr>
+                        <td class="fw-bold text-muted">${index + 1}</td>
+                        <td>${subject.subject_name}</td>
+                        <td>${new Date(subject.created_at).toLocaleDateString()}</td>
+                        <td class="text-center">
+                            <div class="btn-group btn-group-sm">
+                                <button class="btn btn-outline-warning" title="Edit" 
+                                        onclick="showEditSubjectModal(${subject.id}, '${escapeHtml(subject.subject_name)}')">
+                                    <i class="fas fa-edit"></i>
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                `;
                 tbody.innerHTML += row;
             });
         }
@@ -1066,10 +1081,18 @@
                 });
         }
 
-        // Class Room Form Submission
+        // Class Room Form Submission - UPDATED to include medium
         function submitForm() {
             const submitBtn = document.getElementById('submitBtn');
             const originalText = submitBtn.innerHTML;
+
+            // Validate medium field
+            const medium = document.getElementById('medium').value;
+            if (!medium) {
+                showAlert('Please select a medium', 'warning');
+                document.getElementById('medium').classList.add('is-invalid');
+                return;
+            }
 
             // Show loading state
             submitBtn.disabled = true;
@@ -1078,17 +1101,20 @@
             // Get form data
             const formData = new FormData(document.getElementById('createClassRoomForm'));
 
-            // Add all form values including teacher_percentage
+            // Add all form values including medium and teacher_percentage
             const data = {
                 class_name: formData.get('class_name'),
                 class_type: formData.get('class_type'),
+                medium: formData.get('medium'),  // Added medium field
                 teacher_id: formData.get('teacher_id'),
                 subject_id: formData.get('subject_id'),
                 grade_id: formData.get('grade_id'),
-                teacher_percentage: formData.get('teacher_percentage'), // Add this line
+                teacher_percentage: formData.get('teacher_percentage'),
                 is_active: 1,  // Automatically set to 1
                 is_ongoing: 0  // Automatically set to 0
             };
+
+            console.log('Submitting class room data:', data); // Debug log
 
             fetch("{{ url('/api/class-rooms') }}", {
                 method: 'POST',
@@ -1184,22 +1210,20 @@
 
         function showAlert(message, type) {
             const alertDiv = document.createElement('div');
-            alertDiv.className = `alert alert-${type} alert-dismissible fade show`;
+            alertDiv.className = `alert alert-${type} alert-dismissible fade show position-fixed top-0 end-0 m-3`;
+            alertDiv.style.zIndex = '9999';
             alertDiv.innerHTML = `
-                                                    ${message}
-                                                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-                                                `;
+                ${message}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            `;
 
-            const container = document.querySelector('.container') || document.querySelector('.card-body');
-            if (container) {
-                container.insertBefore(alertDiv, container.firstChild);
+            document.body.appendChild(alertDiv);
 
-                setTimeout(() => {
-                    if (alertDiv.parentNode) {
-                        alertDiv.remove();
-                    }
-                }, 5000);
-            }
+            setTimeout(() => {
+                if (alertDiv.parentNode) {
+                    alertDiv.remove();
+                }
+            }, 5000);
         }
     </script>
 @endpush

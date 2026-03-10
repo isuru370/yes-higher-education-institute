@@ -15,6 +15,7 @@ class CreateStudentClassesTable extends Migration
             $table->string('class_name');
             $table->string('class_type')
                 ->default(ClassType::OFFLINE);
+            $table->string('medium')->default('Sinhala');
             $table->decimal('teacher_percentage', 5, 2);
             $table->boolean('is_active');
             $table->boolean('is_ongoing');

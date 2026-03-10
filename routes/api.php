@@ -101,7 +101,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/filter-by-date', [StudentController::class, 'filterByCreatedDate']);
         Route::post('/admission', [StudentController::class, 'fetchNotPaidAdmissionStudent']);
         Route::post('/custom_id', [StudentController::class, 'generateCustomIdAPI']);
-        Route::get('/search/{customId}', [StudentController::class, 'fetchStudentCustomId']);
+        Route::get('/search', [StudentController::class, 'fetchStudentCustomId']);
         Route::post('/update_image/{customId}', [StudentController::class, 'updateStudentImage']);
         Route::get('/analytics/{id}', [StudentController::class, 'analytics']);
 
@@ -111,7 +111,7 @@ Route::middleware('auth:sanctum')->group(function () {
 
         // Parameterized routes
         Route::get('/{id}', [StudentController::class, 'fetchstudent']);
-        Route::put('/{custom_id}', [StudentController::class, 'update']);
+        Route::put('/{student_id}', [StudentController::class, 'update']);
         Route::delete('/{id}', [StudentController::class, 'destroy']);
         Route::put('/{id}/reactivate', [StudentController::class, 'reactivate']);
     });
@@ -326,7 +326,18 @@ Route::middleware('auth:sanctum')->group(function () {
     /*================================================= */
 
     Route::prefix('send-sms')->group(function () {
-        Route::post('/', [SmsController::class, 'sendSMS']);
+
+        // Send Single SMS
+        Route::post('/single', [SmsController::class, 'send']);
+
+        // Send Bulk SMS
+        Route::post('/bulk', [SmsController::class, 'sendBulk']);
+
+        // Send OTP
+        Route::post('/otp/{number}', [SmsController::class, 'sendOtp']);
+
+        // Check Balance
+        Route::get('/balance', [SmsController::class, 'balance']);
     });
 
     /*=================================================
@@ -359,7 +370,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('/', [PaymentsController::class, 'storePayment']);
         Route::get('/by-date/{date}', [PaymentsController::class, 'getPaymentsByDate']);
         Route::get('/receipt/{payment_id}', [PaymentsController::class, 'receiptPrint']);
-        Route::get('/mobile/{custom_id}', [PaymentsController::class, 'mobileReadStudentPayment']); // ✅ fixed
+        Route::get('/mobile', [PaymentsController::class, 'mobileReadStudentPayment']); // ✅ fixed
         Route::get('/teacher', [PaymentsController::class, 'getTeacherPayments']);
         Route::get('/{student_id}/{student_class_id}', [PaymentsController::class, 'fetchStudentPayments']);
         Route::put('/{id}', [PaymentsController::class, 'updatePayment']);

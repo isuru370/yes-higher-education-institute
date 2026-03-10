@@ -5,9 +5,6 @@ namespace App\Http\Controllers;
 
 use App\Services\ClassHallsService;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB; // Add this line
-use Illuminate\Support\Facades\Log; // Add for logging
-use Illuminate\Support\Facades\Schema; // Add for schema operations
 
 class ClassHallsController extends Controller
 {

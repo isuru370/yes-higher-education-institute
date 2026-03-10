@@ -83,7 +83,7 @@ class StudentAdmissionPaymentService
                 return [
                     'id' => $payment->id,
                     'student_id' => $payment->student_id,
-                    'student_name' => $payment->student ? $payment->student->fname . ' ' . $payment->student->lname : 'N/A',
+                    'student_name' => $payment->student ?  $payment->student->initial_name : 'N/A',
                     'admission_name' => $payment->admission ? $payment->admission->name : 'N/A',
                     'amount' => $payment->amount,
                     'created_at' => $payment->created_at->toDateTimeString(),
@@ -215,7 +215,7 @@ class StudentAdmissionPaymentService
                     return [
                         'id' => $payment->id,
                         'student_id' => $payment->student_id,
-                        'student_name' => $payment->student ? $payment->student->fname . ' ' . $payment->student->lname : 'N/A',
+                        'student_name' => $payment->student ? $payment->student->initial_name : 'N/A',
                         'admission_name' => $payment->admission ? $payment->admission->name : 'N/A',
                         'amount' => $payment->amount,
                         'created_at' => $payment->created_at->toDateTimeString(),

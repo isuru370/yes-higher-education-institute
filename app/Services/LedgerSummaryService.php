@@ -6,10 +6,8 @@ use App\Models\AdmissionPayments;
 use App\Models\ExtraIncomes;
 use App\Models\InstitutePayment;
 use App\Models\Payments;
-use App\Models\Teacher;
 use Carbon\Carbon;
 use Exception;
-use Illuminate\Support\Facades\Log;
 use Throwable;
 use Illuminate\Support\Collection;
 
@@ -53,7 +51,6 @@ class LedgerSummaryService
                 ]
             ];
         } catch (Exception $e) {
-            Log::error('Ledger Summary Error', ['error' => $e->getMessage(), 'month' => $yearMonth]);
             return [
                 'status' => 'error',
                 'message' => 'Ledger calculation failed'

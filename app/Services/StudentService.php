@@ -16,7 +16,6 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\Rule;
-use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\ValidationException;
 use Illuminate\Support\Str; // Add this import
@@ -40,8 +39,8 @@ class StudentService
             // Add search functionality if search parameter is provided
             if (!empty($search)) {
                 $studentsQuery->where(function ($query) use ($search) {
-                    $query->where('fname', 'like', "%{$search}%")
-                        ->orWhere('lname', 'like', "%{$search}%")
+                    $query->where('full_name', 'like', "%{$search}%")
+                        ->orWhere('initial_name', 'like', "%{$search}%")
                         ->orWhere('custom_id', 'like', "%{$search}%")
                         ->orWhere('mobile', 'like', "%{$search}%")
                         ->orWhere('email', 'like', "%{$search}%")
@@ -134,8 +133,8 @@ class StudentService
                     return [
                         'student_id' => $item->id,
                         'custom_id' => $item->custom_id,
-                        'fname' => $item->fname,
-                        'lname' => $item->lname,
+                        'full_name' => $item->full_name,
+                        'initial_name' => $item->initial_name,
                         'mobile' => $item->mobile,
                         'whatsapp_mobile' => $item->whatsapp_mobile,
                         'update_at' => $updatedAt->toDateTimeString(),
@@ -165,8 +164,8 @@ class StudentService
             $students = Student::select([
                 'id',
                 'custom_id',
-                'fname',
-                'lname',
+                'full_name',
+                'initial_name',
                 'mobile',
                 'whatsapp_mobile',
                 'img_url',
@@ -202,6 +201,9 @@ class StudentService
             $student = Student::with([
                 'grade' => function ($query) {
                     $query->select('id', 'grade_name');
+                },
+                'portalLogin' => function ($query) {
+                    $query->select('id', 'student_id', 'username', 'is_verify', 'is_active');
                 },
             ])->find($id);
 
@@ -239,9 +241,9 @@ class StudentService
             if (!empty($search)) {
                 $query->where(function ($q) use ($search) {
                     $q->where('custom_id', 'like', "%{$search}%")
-                        ->orWhere('fname', 'like', "%{$search}%")
-                        ->orWhere('lname', 'like', "%{$search}%")
-                        ->orWhereRaw("CONCAT(fname,' ',lname) LIKE ?", ["%{$search}%"]);
+                        ->orWhere('full_name', 'like', "%{$search}%")
+                        ->orWhere('initial_name', 'like', "%{$search}%")
+                        ->orWhereRaw("CONCAT(full_name,' ',initial_name) LIKE ?", ["%{$search}%"]);
                 });
             }
 
@@ -342,42 +344,86 @@ class StudentService
 
 
     //API: custome Id search
-    public function fetchStudentCustomId($customId)
+    public function fetchStudentByQRCode(Request $request)
     {
-        try {
-            $student = Student::with([
-                'grade:id,grade_name',
-                'portalLogin:id,student_id,username,is_verify,is_active'
-            ])
-                ->where('custom_id', $customId)
-                ->where('student_disable', false)
-                ->first();
+        $request->validate([
+            'qr_code' => 'required|string',
+        ]);
 
-            if (!$student) {
+        try {
+            $qrCode = $request->qr_code;
+            $now = Carbon::now();
+
+            // 1️⃣ Temporary QR (starts with TMP)
+            if (str_starts_with($qrCode, 'TMP')) {
+                $student = Student::with([
+                    'grade:id,grade_name',
+                    'portalLogin:id,student_id,username,is_verify,is_active'
+                ])
+                    ->where('temporary_qr_code', $qrCode)
+                    ->where('student_disable', false)
+                    ->first();
+
+                if (!$student) {
+                    return response()->json([
+                        'status' => 'error',
+                        'message' => 'Temporary QR code invalid'
+                    ], 404);
+                }
+
+                // Expire check
+                if ($student->temporary_qr_code_expire_date && $now->gt($student->temporary_qr_code_expire_date)) {
+                    return response()->json([
+                        'status' => 'error',
+                        'message' => 'Temporary QR code has expired'
+                    ], 403);
+                }
+            } else {
+                // 2️⃣ Permanent QR (custom_id)
+                $student = Student::with([
+                    'grade:id,grade_name',
+                    'portalLogin:id,student_id,username,is_verify,is_active'
+                ])
+                    ->where('custom_id', $qrCode)
+                    ->where('student_disable', false)
+                    ->first();
+
+                if (!$student) {
+                    return response()->json([
+                        'status' => 'error',
+                        'message' => 'QR code invalid'
+                    ], 404);
+                }
+
+                if (!$student->permanent_qr_active) {
+                    return response()->json([
+                        'status' => 'error',
+                        'message' => 'Permanent QR code is inactive'
+                    ], 403);
+                }
+            }
+
+            // Check student is active
+            if ($student->is_active == 0) {
                 return response()->json([
                     'status' => 'error',
-                    'message' => 'Student not found'
-                ], 404);
+                    'message' => 'Student is inactive'
+                ], 403);
             }
 
             $studentData = $student->toArray();
 
-            // Check if portal login exists AND is both verified and active
+            // Portal access info
             $hasPortalAccess = false;
             $portalUsername = null;
-
             if ($student->portalLogin) {
                 $portalLogin = $student->portalLogin;
-
-                // Portal access is only considered valid if BOTH conditions are true
                 $hasPortalAccess = $portalLogin->is_verify && $portalLogin->is_active;
                 $portalUsername = $portalLogin->username;
             }
 
             $studentData['has_portal_access'] = $hasPortalAccess;
             $studentData['portal_username'] = $portalUsername;
-
-            // Also include the verification and active status for debugging
             if ($student->portalLogin) {
                 $studentData['portal_is_verify'] = (bool) $student->portalLogin->is_verify;
                 $studentData['portal_is_active'] = (bool) $student->portalLogin->is_active;
@@ -396,14 +442,13 @@ class StudentService
         }
     }
 
-
-    // API: create student
     public function store(Request $request)
     {
         DB::beginTransaction();
-        try {
-            if ($request->quick_image_id) {
 
+        try {
+            // Handle quick photo
+            if ($request->quick_image_id) {
                 $quickPhoto = QuickPhoto::where('id', $request->quick_image_id)
                     ->where('is_active', 1)
                     ->first();
@@ -417,20 +462,23 @@ class StudentService
 
                 $quickPhoto->update(['is_active' => 0]);
             }
+
+            // Validate input (without temporary_qr_code_expire_date, we'll auto-set it)
             $validator = Validator::make($request->all(), [
-                'fname' => 'required|string|max:255',
-                'lname' => 'required|string|max:255',
+                'temporary_qr_code' => 'required|string|max:255',
+                'full_name' => 'required|string|max:255',
+                'initial_name' => 'required|string|max:255',
                 'email' => ['nullable', 'email', Rule::unique('students', 'email')],
                 'mobile' => 'required|string|max:15',
-                'whatsapp_mobile' => 'nullable|string|max:15',
+                'whatsapp_mobile' => 'required|string|max:15',
                 'nic' => ['nullable', 'string', 'max:20', Rule::unique('students', 'nic')],
                 'bday' => 'nullable|date',
-                'gender' => 'nullable|in:male,female,other',
-                'address1' => 'nullable|string|max:255',
-                'address2' => 'nullable|string|max:255',
+                'gender' => 'required|in:male,female,other',
+                'address1' => 'required|string|max:255',
+                'address2' => 'required|string|max:255',
                 'address3' => 'nullable|string|max:255',
-                'guardian_fname' => 'nullable|string|max:255',
-                'guardian_lname' => 'nullable|string|max:255',
+                'guardian_fname' => 'required|string|max:255',
+                'guardian_lname' => 'required|string|max:255',
                 'guardian_nic' => 'nullable|string|max:20',
                 'guardian_mobile' => 'nullable|string|max:15',
                 'is_active' => 'nullable|boolean',
@@ -449,21 +497,22 @@ class StudentService
                 ], 422);
             }
 
+            $data = $validator->validated();
+
             // Generate custom_id
-            $customId = $this->generateCustomId($request->grade_id);
-            $data = $request->all();
-            $data['custom_id'] = $customId;
+            $data['custom_id'] = $this->generateCustomId($data['grade_id']);
+
+            // Auto-set temporary QR code expiration to 2 months from today
+            $data['temporary_qr_code_expire_date'] = Carbon::now()->addMonths(2);
 
             // Ensure boolean fields are properly cast
-            $data['is_active'] = filter_var($data['is_active'] ?? 1, FILTER_VALIDATE_BOOLEAN);
-            $data['admission'] = filter_var($data['admission'] ?? 0, FILTER_VALIDATE_BOOLEAN);
+            $data['is_active'] = boolval($data['is_active'] ?? true);
+            $data['admission'] = boolval($data['admission'] ?? false);
 
-            // Ensure class_type is set (already validated as required)
-            // $data['class_type'] is already set from $request->all()
-
-
+            // Create student
             $student = Student::create($data);
 
+            // Create portal login
             $this->createStudentPortalLogin($student);
 
             DB::commit();
@@ -475,11 +524,6 @@ class StudentService
             ]);
         } catch (Exception $e) {
             DB::rollBack();
-            Log::error('Student creation failed:', [
-                'error' => $e->getMessage(),
-                'trace' => $e->getTraceAsString(),
-                'request_data' => $request->all()
-            ]);
 
             return response()->json([
                 'status' => 'error',
@@ -493,30 +537,48 @@ class StudentService
 
     public function publicStudentRegister(Request $request)
     {
+        return $this->store($request);
+    }
+
+    // API: update student
+    public function update(Request $request, $student_id)
+    {
         DB::beginTransaction();
+
         try {
+            // 1️⃣ Find student
+            $student = Student::where('id', $student_id)->first();
+            if (!$student) {
+                return response()->json([
+                    'status' => 'error',
+                    'message' => 'Student not found'
+                ], 404);
+            }
+
+            // 2️⃣ Validation
             $validator = Validator::make($request->all(), [
-                'fname' => 'required|string|max:255',
-                'lname' => 'required|string|max:255',
-                'email' => ['nullable', 'email', Rule::unique('students', 'email')],
-                'mobile' => 'required|string|max:15',
-                'whatsapp_mobile' => 'nullable|string|max:15',
-                'nic' => ['nullable', 'string', 'max:20', Rule::unique('students', 'nic')],
-                'bday' => 'nullable|date',
-                'gender' => 'nullable|in:male,female,other',
-                'address1' => 'nullable|string|max:255',
-                'address2' => 'nullable|string|max:255',
-                'address3' => 'nullable|string|max:255',
-                'guardian_fname' => 'nullable|string|max:255',
-                'guardian_lname' => 'nullable|string|max:255',
-                'guardian_nic' => 'nullable|string|max:20',
-                'guardian_mobile' => 'nullable|string|max:15',
-                'is_active' => 'nullable|boolean',
-                'img_url' => 'required|string|max:255',
-                'grade_id' => ['required', 'exists:grades,id'],
-                'class_type' => 'required|in:online,offline',
-                'admission' => 'nullable|boolean',
-                'student_school' => 'nullable|string|max:255'
+                'temporary_qr_code' => 'nullable|string|max:255',
+                'full_name'         => 'required|string|max:255',
+                'initial_name'      => 'required|string|max:255',
+                'email'             => ['nullable', 'email', Rule::unique('students', 'email')->ignore($student->id)],
+                'mobile'            => 'required|string|max:15',
+                'whatsapp_mobile'   => 'required|string|max:15',
+                'nic'               => ['nullable', 'string', 'max:20', Rule::unique('students', 'nic')->ignore($student->id)],
+                'bday'              => 'nullable|string',
+                'gender'            => 'required|in:male,female,other',
+                'address1'          => 'required|string|max:255',
+                'address2'          => 'required|string|max:255',
+                'address3'          => 'nullable|string|max:255',
+                'guardian_fname'    => 'required|string|max:255',
+                'guardian_lname'    => 'required|string|max:255',
+                'guardian_nic'      => 'nullable|string|max:20',
+                'guardian_mobile'   => 'nullable|string|max:15',
+                'is_active'         => 'nullable|boolean',
+                'img_url'           => 'required|string|max:255',
+                'grade_id'          => ['required', 'exists:grades,id'],
+                'class_type'        => 'required|in:online,offline',
+                'admission'         => 'nullable|boolean',
+                'student_school'    => 'nullable|string|max:255'
             ]);
 
             if ($validator->fails()) {
@@ -527,119 +589,22 @@ class StudentService
                 ], 422);
             }
 
-            // Generate custom_id
-            $customId = $this->generateCustomId($request->grade_id);
-            $data = $request->all();
-            $data['custom_id'] = $customId;
+            $data = $validator->validated();
 
-            // Ensure boolean fields are properly cast
-            $data['is_active'] = filter_var($data['is_active'] ?? 1, FILTER_VALIDATE_BOOLEAN);
-            $data['admission'] = filter_var($data['admission'] ?? 0, FILTER_VALIDATE_BOOLEAN);
-
-            //Log::info('Creating student with data:', $data);
-
-            $student = Student::create($data);
-
-            DB::commit();
-
-            return response()->json([
-                'status' => 'success',
-                'message' => 'Student created successfully',
-                'data' => $student
-            ]);
-        } catch (Exception $e) {
-            DB::rollBack();
-            Log::error('Student creation failed:', [
-                'error' => $e->getMessage(),
-                'trace' => $e->getTraceAsString(),
-                'request_data' => $request->all()
-            ]);
-
-            return response()->json([
-                'status' => 'error',
-                'message' => 'Failed to create student',
-                'error' => $e->getMessage()
-            ], 500);
-        }
-    }
-
-    // API: update student
-    public function update(Request $request, $custom_id)
-    {
-        DB::beginTransaction();
-
-        try {
-            $student = Student::where('custom_id', $custom_id)->first();
-            if (!$student) {
-                return response()->json([
-                    'status' => 'error',
-                    'message' => 'Student not found'
-                ], 404);
-            }
-
-            // -------------------------
-            // VALIDATION
-            // -------------------------
-            $validated = $request->validate([
-                'fname'             => 'required|string|max:255',
-                'lname'             => 'required|string|max:255',
-                'email' => [
-                    'nullable',
-                    'email',
-                    Rule::unique('students', 'email')->ignore($student->id),
-                ],
-                'mobile'            => 'required|string|max:15',
-                'whatsapp_mobile'   => 'required|string|max:15',
-                'nic' => [
-                    'nullable',
-                    'string',
-                    'max:20',
-                    Rule::unique('students', 'nic')->ignore($student->id),
-                ],
-                // bday will be validated manually (multiple formats)
-                'bday'              => 'required|string',
-                'gender'            => 'required|in:male,female,other',
-                'address1'          => 'required|string|max:255',
-                'address2'          => 'required|string|max:255',
-                'address3'          => 'nullable|string|max:255',
-                'guardian_fname'    => 'required|string|max:255',
-                'guardian_lname'    => 'required|string|max:255',
-                'guardian_nic'      => 'nullable|string|max:20',
-                'guardian_mobile'   => 'required|string|max:15',
-                'is_active'         => 'required|boolean',
-                'img_url'           => 'required|string|max:255',
-                'grade_id' => ['required', 'exists:grades,id'],
-                'class_type' => 'required|in:online,offline',
-                'admission'         => 'required|boolean',
-                'student_school'    => 'nullable|string|max:255'
-            ]);
-
-            // -------------------------
-            // MULTI-FORMAT DATE FIX
-            // -------------------------
-            if ($request->filled('bday')) {
-                $possibleFormats = [
-                    'Y-m-d',
-                    'd/m/Y',
-                    'd-m-Y',
-                    'm-d-Y',
-                    'm/d/Y',
-                ];
-
+            // 3️⃣ Multi-format birthday parsing
+            if (!empty($data['bday'])) {
+                $possibleFormats = ['Y-m-d', 'd/m/Y', 'd-m-Y', 'm-d-Y', 'm/d/Y'];
                 $parsed = null;
-
                 foreach ($possibleFormats as $format) {
-                    $try = \DateTime::createFromFormat($format, $request->bday);
-                    if ($try && $try->format($format) === $request->bday) {
-                        $parsed = $try->format('Y-m-d'); // Save in proper format
+                    $try = \DateTime::createFromFormat($format, $data['bday']);
+                    if ($try && $try->format($format) === $data['bday']) {
+                        $parsed = $try->format('Y-m-d');
                         break;
                     }
                 }
-
-                // If nothing matched, try Carbon's smart parser
                 if (!$parsed) {
                     try {
-                        $parsed = Carbon::parse($request->bday)->format('Y-m-d');
+                        $parsed = Carbon::parse($data['bday'])->format('Y-m-d');
                     } catch (Exception $e) {
                         return response()->json([
                             'status' => 'error',
@@ -648,14 +613,20 @@ class StudentService
                         ], 422);
                     }
                 }
-
-                $validated['bday'] = $parsed;
+                $data['bday'] = $parsed;
             }
 
-            // -------------------------
-            // UPDATE
-            // -------------------------
-            $student->update($validated);
+            // 4️⃣ Boolean casting
+            $data['is_active'] = isset($data['is_active']) ? boolval($data['is_active']) : $student->is_active;
+            $data['admission']  = isset($data['admission']) ? boolval($data['admission']) : $student->admission;
+
+            // 5️⃣ Temporary QR expiration update (optional: reset if provided)
+            if (isset($data['temporary_qr_code'])) {
+                $data['temporary_qr_code_expire_date'] = Carbon::now()->addMonths(2);
+            }
+
+            // 6️⃣ Update student
+            $student->update($data);
 
             DB::commit();
 
@@ -727,23 +698,18 @@ class StudentService
     {
         DB::beginTransaction();
         try {
-            Log::info('Attempting to deactivate student ID: ' . $id);
 
             $student = Student::find($id);
 
             if (!$student) {
-                Log::warning('Student not found with ID: ' . $id);
                 return response()->json([
                     'status' => 'error',
                     'message' => 'Student not found'
                 ], 404);
             }
 
-            Log::info('Student found:', ['student_id' => $student->id, 'current_status' => $student->is_active]);
 
             $student->update(['is_active' => 0]);
-
-            Log::info('Student deactivated successfully:', ['student_id' => $student->id, 'new_status' => $student->is_active]);
 
             DB::commit();
 
@@ -757,11 +723,6 @@ class StudentService
             ]);
         } catch (Exception $e) {
             DB::rollBack();
-            Log::error('Failed to deactivate student:', [
-                'student_id' => $id,
-                'error' => $e->getMessage(),
-                'trace' => $e->getTraceAsString()
-            ]);
             return response()->json([
                 'status' => 'error',
                 'message' => 'Failed to deactivate student',
@@ -903,7 +864,7 @@ class StudentService
             $studentCount = Student::where('grade_id', $gradeId)->count() + 1;
 
             // Generate the custom ID
-            $customId = "CS" . $gradeCode . str_pad($studentCount, 3, '0', STR_PAD_LEFT);
+            $customId = "SA" . $gradeCode . str_pad($studentCount, 3, '0', STR_PAD_LEFT);
 
             return response()->json([
                 'status' => 'success',
@@ -977,8 +938,8 @@ class StudentService
                         'class_name' => $studentClass->class_name,
                         'teacher'    => $studentClass->teacher ? [
                             'custom_id'  => $studentClass->teacher->custom_id,
-                            'first_name' => $studentClass->teacher->fname,
-                            'last_name'  => $studentClass->teacher->lname
+                            'full_name' => $studentClass->teacher->full_name,
+                            'initial_name'  => $studentClass->teacher->initial_name
                         ] : null,
                         'subject' => $studentClass->subject ? [
                             'subject_name' => $studentClass->subject->subject_name
@@ -1076,7 +1037,7 @@ class StudentService
             ];
         }
 
-        $records = StudentAttendances::whereIn('status', $attendanceIds)
+        $records = StudentAttendances::whereIn('attendance_id', $attendanceIds)
             ->where('student_id', $student_id)
             ->get();
 
@@ -1166,8 +1127,8 @@ class StudentService
                 ->select(
                     'id',
                     'custom_id',
-                    'fname',
-                    'lname',
+                    'full_name',
+                    'initial_name',
                     'mobile',
                     'created_at',
                     'img_url',
@@ -1188,8 +1149,8 @@ class StudentService
             if (!empty($search)) {
                 $studentsQuery->where(function ($query) use ($search) {
                     $query->where('custom_id', 'like', "%{$search}%")
-                        ->orWhere('fname', 'like', "%{$search}%")
-                        ->orWhere('lname', 'like', "%{$search}%")
+                        ->orWhere('full_name', 'like', "%{$search}%")
+                        ->orWhere('initial_name', 'like', "%{$search}%")
                         ->orWhere('mobile', 'like', "%{$search}%")
                         ->orWhereHas('grade', function ($gradeQuery) use ($search) {
                             $gradeQuery->where('grade_name', 'like', "%{$search}%");

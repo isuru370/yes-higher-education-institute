@@ -25,7 +25,7 @@ class CreateStudentStudentStudentClassesTable extends Migration
                 'class_category_has_student_class_id',
                 'fk_cc_hs_class'
             )->references('id')
-                ->on('class_category_has_student_classes');
+                ->on('class_category_has_student_class');
 
 
             $table->boolean('status');
