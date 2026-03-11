@@ -76,7 +76,6 @@ class MobileDashboardController extends Controller
             });
 
         // Today registered students count
-        // Today registered students
         $todayStudents = Student::whereBetween('created_at', [
             now()->startOfDay(),
             now()->endOfDay()
@@ -84,8 +83,8 @@ class MobileDashboardController extends Controller
             ->select(
                 'id',
                 'custom_id',
-                'fname',
-                'lname',
+                'full_name',
+                'initial_name',
                 'img_url',
                 'class_type',
                 'admission'

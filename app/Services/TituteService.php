@@ -15,44 +15,96 @@ class TituteService
      * Fetch titute records with filters
      */
 
-    public function readClassWiseTute($customId)
+    public function readClassWiseTuteByQR(Request $request)
     {
-        $studentId = Student::where('custom_id', $customId)->value('id');
-        if (!$studentId) {
+        $request->validate([
+            'qr_code' => 'required|string',
+        ]);
+
+        $qrCode = $request->qr_code;
+        $now = Carbon::now();
+
+        try {
+            // 1️⃣ Temporary QR
+            if (str_starts_with($qrCode, 'TMP')) {
+                $student = Student::where('temporary_qr_code', $qrCode)
+                    ->where('student_disable', false)
+                    ->first();
+
+                if (!$student) {
+                    return response()->json([
+                        'status' => 'error',
+                        'message' => 'Temporary QR code invalid'
+                    ], 404);
+                }
+
+                if ($student->temporary_qr_code_expire_date && $now->gt($student->temporary_qr_code_expire_date)) {
+                    return response()->json([
+                        'status' => 'error',
+                        'message' => 'Temporary QR code has expired'
+                    ], 403);
+                }
+            }
+            // 2️⃣ Permanent QR
+            else {
+                $student = Student::where('custom_id', $qrCode)
+                    ->where('student_disable', false)
+                    ->first();
+
+                if (!$student) {
+                    return response()->json([
+                        'status' => 'error',
+                        'message' => 'QR code invalid'
+                    ], 404);
+                }
+
+                if (!$student->permanent_qr_active) {
+                    return response()->json([
+                        'status' => 'error',
+                        'message' => 'Permanent QR code is inactive'
+                    ], 403);
+                }
+            }
+
+            // ✅ Fetch student classes
+            $stuClasses = StudentStudentStudentClass::with([
+                'student:id,custom_id,full_name,initial_name,guardian_mobile,img_url',
+                'studentClass:id,class_name,grade_id',
+                'classCategoryHasStudentClass.classCategory:id,category_name',
+            ])
+                ->where('student_id', $student->id)
+                ->where('status', 1)
+                ->get()
+                ->map(function ($item) {
+                    return [
+                        'student' => [
+                            'id' => $item->student_id,
+                            'custom_id' => $item->student->custom_id ?? null,
+                            'first_name' => $item->student->full_name ?? null,
+                            'last_name' => $item->student->initial_name ?? null,
+                            'guardian_mobile' => $item->student->guardian_mobile ?? null,
+                            'img_url' => $item->student->img_url ?? null,
+                        ],
+                        'class_name' => optional($item->studentClass)->class_name,
+                        'class_category_has_student_class_id' => $item->class_category_has_student_class_id,
+                        'grade_name' => optional($item->studentClass->grade)->grade_name,
+                        'category_name' => optional($item->classCategoryHasStudentClass->classCategory)->category_name,
+                    ];
+                });
+
+            return response()->json([
+                'status' => 'success',
+                'qr_type' => str_starts_with($qrCode, 'TMP') ? 'temporary' : 'permanent',
+                'total' => $stuClasses->count(),
+                'data' => $stuClasses
+            ]);
+        } catch (\Exception $e) {
             return response()->json([
                 'status' => 'error',
-                'message' => 'Student not found.'
-            ], 404);
+                'message' => 'Something went wrong',
+                'error' => $e->getMessage()
+            ], 500);
         }
-        $stucnlasses = StudentStudentStudentClass::with([
-            'student:id,custom_id,full_name,initial_name,guardian_mobile,img_url',
-            'studentClass:id,class_name,grade_id',
-            'classCategoryHasStudentClass.classCategory:id,category_name',
-        ])
-            ->where('student_id', $studentId)
-            ->where('status', 1)
-            ->get()
-            ->map(function ($item) {
-                return [
-                    'student' => [
-                        'id' => $item->student_id,
-                        'custom_id' => $item->student->custom_id ?? null,
-                        'first_name' => $item->student->full_name ?? null,
-                        'last_name' => $item->student->initial_name ?? null,
-                        'guardian_mobile' => $item->student->guardian_mobile ?? null,
-                        'img_url' => $item->student->img_url ?? null,
-                    ],
-                    'class_name' => optional($item->studentClass)->class_name,
-                    'class_category_has_student_class_id' => $item->class_category_has_student_class_id,
-                    'grade_name' => optional($item->studentClass->grade)->grade_name,
-                    'category_name' => optional($item->classCategoryHasStudentClass->classCategory)->category_name,
-                ];
-            });
-        return response()->json([
-            'status' => 'success',
-            'total' => $stucnlasses->count(),
-            'data' => $stucnlasses
-        ]);
     }
 
     public function getStudentWithAllTutes(

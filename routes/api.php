@@ -286,7 +286,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::prefix('tute')->group(function () {
 
         Route::get(
-            '/class-wise/{customId}',
+            '/class-wise',
             [TituteController::class, 'readClassWiseTute']
         );
 
