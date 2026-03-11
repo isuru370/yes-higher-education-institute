@@ -8,13 +8,13 @@ services:
     container_name: laravel_app
     restart: always
     ports:
-      - '8005:80'
+      - '8006:80'
     volumes:
       - storage_volume:/var/www/html/storage
       - uploads_volume:/var/www/html/public/uploads
     environment:
       - APP_ENV=production
-      - APP_URL=https://edu.nexorait.lk
+      - APP_URL=https://yeseducation.nexorait.lk
     command: >
       sh -c "
       chown -R www-data:www-data /var/www/html/storage /var/www/html/public/uploads &&
