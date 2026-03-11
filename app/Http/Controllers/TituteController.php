@@ -34,8 +34,8 @@ class TituteController extends Controller
         return $this->tituteService->toggleStatus($id);
     }
 
-    public function readClassWiseTute($customId)
+ public function readClassWiseTute(Request $request)
     {
-        return $this->tituteService->readClassWiseTute($customId);
+        return $this->tituteService->readClassWiseTuteByQR($request);
     }
 }
