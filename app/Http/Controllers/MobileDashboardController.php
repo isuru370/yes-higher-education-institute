@@ -12,10 +12,11 @@ class MobileDashboardController extends Controller
     public function index()
     {
         // Daily payment collection
-        $dailyCollection = Payments::whereBetween('created_at', [
-            now()->startOfDay(),
-            now()->endOfDay()
-        ])
+        $dailyCollection = Payments::where('user_id', auth()->user()->id)
+            ->whereBetween('created_at', [
+                now()->startOfDay(),
+                now()->endOfDay()
+            ])
             ->sum('amount');
 
         // Today class schedule
