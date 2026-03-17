@@ -116,6 +116,7 @@ class StudentService
     {
         try {
             $students = Student::where('is_active', 1)
+                ->where('permanent_qr_active',false)
                 ->where('student_disable', 0)
                 ->orderBy('id', 'desc')
                 ->get()
@@ -132,7 +133,7 @@ class StudentService
 
                     return [
                         'student_id' => $item->id,
-                        'custom_id' => $item->custom_id,
+                        'temporary_qr_code' => $item->temporary_qr_code,
                         'full_name' => $item->full_name,
                         'initial_name' => $item->initial_name,
                         'mobile' => $item->mobile,
