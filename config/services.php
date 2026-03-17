@@ -30,6 +30,13 @@ return [
         'region' => env('AWS_DEFAULT_REGION', 'us-east-1'),
     ],
 
+    'sms' => [
+        'base_url' => env('SMS_BASE_URL', 'https://smsapi.chatbiz.net/v1'),
+        'user_id' => env('SMS_USER_ID'),
+        'api_key' => env('SMS_API_KEY'),
+        'sender_id' => env('SMS_SENDER_ID'),
+    ],
+
     // ✅ Add this block for image URLs
     'image' => [
         'base_url' => env('IMAGE_BASE_URL'),

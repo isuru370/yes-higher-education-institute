@@ -21,16 +21,15 @@ class Payments extends Model
         'user_id',
     ];
 
-    // Type casting for JSON responses
     protected $casts = [
-        'status'                             => 'boolean',
-        'amount'                             => 'double',
-        'student_id'                          => 'integer',
-        'student_student_student_classes_id'  => 'integer',
-        'payment_date'                        => 'datetime',
-        'created_at'                          => 'datetime',
-        'updated_at'                          => 'datetime',
-        'user_id'                          => 'integer',
+        'status' => 'boolean',
+        'amount' => 'decimal:2',
+        'student_id' => 'integer',
+        'student_student_student_classes_id' => 'integer',
+        'user_id' => 'integer',
+        'payment_date' => 'datetime',
+        'created_at' => 'datetime',
+        'updated_at' => 'datetime',
     ];
 
     public function student()
@@ -43,7 +42,8 @@ class Payments extends Model
         return $this->belongsTo(StudentStudentStudentClass::class, 'student_student_student_classes_id', 'id');
     }
 
-    public function user(){
-        return $this->belongsTo(User::class,'user_id','id');
+    public function user()
+    {
+        return $this->belongsTo(User::class, 'user_id', 'id');
     }
 }

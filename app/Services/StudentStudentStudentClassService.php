@@ -2,14 +2,143 @@
 
 namespace App\Services;
 
-
+use App\Models\Student;
 use App\Models\StudentStudentStudentClass;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Exception;
 
 class StudentStudentStudentClassService
 {
+
+    public function readStudentClass(Request $request)
+    {
+        try {
+            $request->validate([
+                'qr_code' => 'required|string',
+            ]);
+
+            $qrCode = $request->qr_code;
+            $now = Carbon::now();
+
+            // 1️⃣ Determine temporary or permanent QR
+            if (str_starts_with($qrCode, 'TMP')) {
+
+                $student = Student::where('temporary_qr_code', $qrCode)
+                    ->where('student_disable', false)
+                    ->first();
+
+                if (!$student) {
+                    return response()->json([
+                        'status' => 'error',
+                        'message' => 'Temporary QR code invalid',
+                        'data' => []
+                    ], 404);
+                }
+
+                if (
+                    $student->temporary_qr_code_expire_date &&
+                    $now->gt($student->temporary_qr_code_expire_date)
+                ) {
+                    return response()->json([
+                        'status' => 'error',
+                        'message' => 'Temporary QR code expired',
+                        'data' => []
+                    ], 403);
+                }
+            } else {
+
+                // Permanent QR
+                $student = Student::where('custom_id', $qrCode)
+                    ->where('student_disable', false)
+                    ->first();
+
+                if (!$student) {
+                    return response()->json([
+                        'status' => 'error',
+                        'message' => 'QR code invalid',
+                        'data' => []
+                    ], 404);
+                }
+
+                if (!$student->permanent_qr_active) {
+                    return response()->json([
+                        'status' => 'error',
+                        'message' => 'Permanent QR code inactive',
+                        'data' => []
+                    ], 403);
+                }
+            }
+
+            // 2️⃣ Get student classes (optional)
+            $classes = StudentStudentStudentClass::with([
+                'studentClass',
+                'studentClass.grade',
+                'studentClass.subject',
+                'classCategoryHasStudentClass.classCategory'
+            ])
+                ->where('student_id', $student->id)
+                ->get()
+                ->map(function ($item) {
+
+                    return [
+                        'student_student_student_classes_id' => $item->id,
+                        'status' => (bool) $item->status,
+                        'is_free_card' => (bool) $item->is_free_card,
+
+                        'student_class' => [
+                            'id' => optional($item->studentClass)->id,
+                            'class_name' => optional($item->studentClass)->class_name,
+                            'medium' => optional($item->studentClass)->medium,
+                        ],
+                        'grade' => [
+                            'id' => optional($item->studentClass->grade)->id,
+                            'grade_name' => optional($item->studentClass->grade)->grade_name,
+                        ],
+
+                        'subject' => [
+                            'id' => optional($item->studentClass->subject)->id,
+                            'subject_name' => optional($item->studentClass->subject)->subject_name,
+                        ],
+
+                        'class_category_has_student_class' => [
+                            'id' => optional($item->classCategoryHasStudentClass)->id,
+                            'fees' => optional($item->classCategoryHasStudentClass)->fees,
+                            'class_category' => [
+                                'category_name' => optional(optional($item->classCategoryHasStudentClass)->classCategory)->category_name,
+                            ],
+                        ],
+                    ];
+                });
+
+            // 3️⃣ Student details (always returned)
+            $studentData = [
+                'id' => $student->id,
+                'custom_id' => $student->custom_id,
+                'first_name' => $student->full_name,
+                'last_name' => $student->initial_name,
+                'guardian_mobile' => $student->guardian_mobile,
+                'img_url' => $student->img_url,
+            ];
+
+            return response()->json([
+                'status' => 'success',
+                'message' => 'Student data fetched successfully',
+                'data' => [
+                    'student' => $studentData,
+                    'classes' => $classes
+                ]
+            ], 200);
+        } catch (Exception $e) {
+
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Failed to fetch student data',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
     public function getStudentsByClassAndCategory($classId, $categoryId)
     {
         try {
@@ -306,7 +435,7 @@ class StudentStudentStudentClassService
                 'status' => 'success',
                 'message' => 'Record created successfully',
                 'record' => $record
-            ], 201);
+            ], 200);
         } catch (Exception $e) {
             return response()->json([
                 'status' => 'error',
@@ -411,6 +540,33 @@ class StudentStudentStudentClassService
             return response()->json([
                 'status' => 'error',
                 'message' => 'Failed to deactivate records',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    public function toggleStudentClassStatus($id)
+    {
+        try {
+            $record = StudentStudentStudentClass::findOrFail($id);
+
+            // Toggle status
+            $record->status = $record->status == 1 ? 0 : 1;
+            $record->save();
+
+            $message = $record->status == 1
+                ? 'Student class record activated'
+                : 'Student class record deactivated';
+
+            return response()->json([
+                'status' => 'success',
+                'message' => $message,
+                'record' => $record
+            ], 200);
+        } catch (Exception $e) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Failed to update record',
                 'error' => $e->getMessage()
             ], 500);
         }

@@ -93,6 +93,34 @@
         .id-card-logo {
             width: 30mm;
         }
+
+        /* Bulk download styles */
+        .bulk-actions {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+
+        .student-checkbox {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            z-index: 10;
+        }
+
+        .student-card {
+            position: relative;
+        }
+
+        .student-card.selected {
+            outline: 3px solid #0d6efd;
+            border-radius: 8px;
+        }
+
+        #selectAllBtn {
+            transition: all 0.3s;
+        }
     </style>
 
     <div class="card">
@@ -146,6 +174,29 @@
                 </div>
             </div>
 
+            <!-- Bulk Actions -->
+            <div class="bulk-actions">
+                <div class="row align-items-center">
+                    <div class="col-md-6">
+                        <h5 class="mb-0">
+                            <i class="fas fa-id-card me-2"></i>
+                            <span id="selectedCount">0</span> students selected
+                        </h5>
+                    </div>
+                    <div class="col-md-6 text-end">
+                        <button type="button" class="btn btn-outline-primary me-2" id="selectAllBtn">
+                            <i class="fas fa-check-double me-1"></i> Select All
+                        </button>
+                        <button type="button" class="btn btn-outline-secondary me-2" id="deselectAllBtn">
+                            <i class="fas fa-times me-1"></i> Deselect All
+                        </button>
+                        <button type="button" class="btn btn-success" id="bulkDownloadBtn" disabled>
+                            <i class="fas fa-download me-1"></i> Download Selected (<span id="downloadCount">0</span>)
+                        </button>
+                    </div>
+                </div>
+            </div>
+
             <!-- Stats -->
             <div class="row mb-3">
                 <div class="col-md-12">
@@ -168,8 +219,14 @@
                             data-student='@json($student)'>
                             <div class="card h-100">
                                 <div class="card-body p-3">
+                                    <!-- Checkbox for bulk selection -->
+                                    <div class="student-checkbox">
+                                        <input type="checkbox" class="form-check-input student-select"
+                                            value="{{ $student['custom_id'] }}" id="student_{{ $student['custom_id'] }}">
+                                    </div>
+
                                     <!-- Student ID -->
-                                    <div class="mb-3">
+                                    <div class="mb-3 ms-4">
                                         <h6 class="fw-bold text-primary">{{ $student['custom_id'] }}</h6>
                                     </div>
 
@@ -222,7 +279,7 @@
                                         <div class="d-flex justify-content-between mb-1">
                                             <small class="text-muted">
                                                 <i class="fas fa-user me-1"></i>
-                                                {{ $student['fname'] }} {{ $student['lname'] }}
+                                                {{ $student['lname'] }}
                                             </small>
                                             @if(isset($student['created_at']))
                                                 <small class="text-muted">
@@ -332,22 +389,48 @@
             </div>
         </div>
     </div>
+
+    <!-- Bulk Download Progress Modal -->
+    <div class="modal fade" id="bulkProgressModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Bulk Download Progress</h5>
+                </div>
+                <div class="modal-body">
+                    <div class="progress mb-3">
+                        <div class="progress-bar progress-bar-striped progress-bar-animated" id="bulkProgressBar"
+                            role="progressbar" style="width: 0%">0%</div>
+                    </div>
+                    <p id="bulkProgressText">Processing... <span id="bulkCurrentCount">0</span> of <span
+                            id="bulkTotalCount">0</span></p>
+                </div>
+            </div>
+        </div>
+    </div>
 @endsection
 
 @push('styles')
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js">
 @endpush
 
 @push('scripts')
-    <!-- Load html2canvas for image generation -->
+    <!-- Load required libraries -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
-    <!-- Load SweetAlert2 for alerts -->
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
 
     <script>
         let selectedStudentData = null;
+        let selectedStudents = new Set();
+        let bulkZip = new JSZip();
+        let bulkProgressModal;
 
         document.addEventListener('DOMContentLoaded', function () {
+            bulkProgressModal = new bootstrap.Modal(document.getElementById('bulkProgressModal'));
+
             // Event delegation for preview buttons
             document.addEventListener('click', function (e) {
                 if (e.target.classList.contains('preview-single-card') ||
@@ -358,7 +441,75 @@
                     previewSingleCard(studentId);
                 }
             });
+
+            // Bulk selection handlers
+            document.querySelectorAll('.student-select').forEach(checkbox => {
+                checkbox.addEventListener('change', function () {
+                    const studentId = this.value;
+                    const card = this.closest('.student-card');
+
+                    if (this.checked) {
+                        selectedStudents.add(studentId);
+                        card.classList.add('selected');
+                    } else {
+                        selectedStudents.delete(studentId);
+                        card.classList.remove('selected');
+                    }
+
+                    updateBulkActions();
+                });
+            });
+
+            // Select all button
+            document.getElementById('selectAllBtn').addEventListener('click', function () {
+                document.querySelectorAll('.student-select').forEach(checkbox => {
+                    if (!checkbox.checked) {
+                        checkbox.checked = true;
+                        const studentId = checkbox.value;
+                        const card = checkbox.closest('.student-card');
+                        selectedStudents.add(studentId);
+                        card.classList.add('selected');
+                    }
+                });
+                updateBulkActions();
+            });
+
+            // Deselect all button
+            document.getElementById('deselectAllBtn').addEventListener('click', function () {
+                document.querySelectorAll('.student-select').forEach(checkbox => {
+                    if (checkbox.checked) {
+                        checkbox.checked = false;
+                        const studentId = checkbox.value;
+                        const card = checkbox.closest('.student-card');
+                        selectedStudents.delete(studentId);
+                        card.classList.remove('selected');
+                    }
+                });
+                updateBulkActions();
+            });
+
+            // Bulk download button
+            document.getElementById('bulkDownloadBtn').addEventListener('click', function () {
+                if (selectedStudents.size > 0) {
+                    downloadBulkCards();
+                }
+            });
         });
+
+        function updateBulkActions() {
+            const count = selectedStudents.size;
+            document.getElementById('selectedCount').textContent = count;
+            document.getElementById('downloadCount').textContent = count;
+
+            const bulkBtn = document.getElementById('bulkDownloadBtn');
+            bulkBtn.disabled = count === 0;
+
+            if (count === document.querySelectorAll('.student-select').length) {
+                document.getElementById('selectAllBtn').innerHTML = '<i class="fas fa-check-double me-1"></i> All Selected';
+            } else {
+                document.getElementById('selectAllBtn').innerHTML = '<i class="fas fa-check-double me-1"></i> Select All';
+            }
+        }
 
         function previewSingleCard(studentId) {
             const cardElement = document.querySelector(`.student-card[data-id="${studentId}"]`);
@@ -396,53 +547,145 @@
             const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=600x600&data=${encodeURIComponent(student.custom_id || 'N/A')}`;
 
             return `
-    <div class="student-id-card" id="downloadableCard">
-
-        <!-- INNER FLEX WRAPPER -->
-        <div style="display:flex; flex-direction:row; width:100%; height:100%;">
-
-            <!-- LEFT SIDE -->
-            <div style="width:70%; display:flex; flex-direction:column; align-items:flex-start;">
-
-                <div class="id-card-profile-box" style="margin-top:1mm; margin-left:1mm;">
-                    <img src="${studentImage}"
-                         alt="Student Photo"
-                         crossorigin="anonymous"
-                         onerror="this.onerror=null;this.src='${defaultImage}'">
-                </div>
-
-                <div style="margin-left:1mm; margin-top:3mm; text-align:left;">
-                    <div class="id-card-student-id">${student.custom_id || 'N/A'}</div>
-                    <div class="id-card-student-name" style="margin-top:1mm;">
-                        ${student.lname || ''}
+                    <div class="student-id-card" id="downloadableCard">
+                        <div style="display:flex; flex-direction:row; width:100%; height:100%;">
+                            <div style="width:70%; display:flex; flex-direction:column; align-items:flex-start;">
+                                <div class="id-card-profile-box" style="margin-top:1mm; margin-left:1mm;">
+                                    <img src="${studentImage}"
+                                         alt="Student Photo"
+                                         crossorigin="anonymous"
+                                         onerror="this.onerror=null;this.src='${defaultImage}'">
+                                </div>
+                                <div style="margin-left:1mm; margin-top:3mm; text-align:left;">
+                                    <div class="id-card-student-id">${student.custom_id || 'N/A'}</div>
+                                    <div class="id-card-student-name" style="margin-top:1mm;">
+                                        ${student.lname || ''}
+                                    </div>
+                                    <div class="id-card-address"
+                                         style="margin-top:1mm; max-width:45mm; overflow:hidden;">
+                                        ${student.address || 'Address not available'}
+                                    </div>
+                                </div>
+                            </div>
+                            <div style="width:30%; display:flex; flex-direction:column; align-items:center;">
+                                <img src="${qrUrl}"
+                                     class="id-card-qr-img"
+                                     alt="QR Code"
+                                     crossorigin="anonymous"
+                                     style="margin-top:1mm;">
+                                <img src="{{ asset('uploads/logo/white_logo.png') }}"
+                                     class="id-card-logo"
+                                     alt="Logo"
+                                     crossorigin="anonymous"
+                                     style="margin-top:auto; margin-bottom:1mm;">
+                            </div>
+                        </div>
                     </div>
-                    <div class="id-card-address"
-                         style="margin-top:1mm; max-width:45mm; overflow:hidden;">
-                        ${student.address || 'Address not available'}
-                    </div>
-                </div>
-            </div>
+                `;
+        }
 
-            <!-- RIGHT SIDE -->
-            <div style="width:30%; display:flex; flex-direction:column; align-items:center;">
+        async function downloadBulkCards() {
+            const totalCards = selectedStudents.size;
+            let processed = 0;
 
-                <img src="${qrUrl}"
-                     class="id-card-qr-img"
-                     alt="QR Code"
-                     crossorigin="anonymous"
-                     style="margin-top:1mm;">
+            // Reset zip file
+            bulkZip = new JSZip();
 
-                <img src="{{ asset('uploads/logo/white_logo.png') }}"
-                     class="id-card-logo"
-                     alt="Logo"
-                     crossorigin="anonymous"
-                     style="margin-top:auto; margin-bottom:1mm;">
-            </div>
+            // Show progress modal
+            bulkProgressModal.show();
+            document.getElementById('bulkTotalCount').textContent = totalCards;
+            updateBulkProgress(0, totalCards);
 
-        </div>
-    </div>
-    `;
+            showLoading(`Preparing to download ${totalCards} ID cards...`);
 
+            try {
+                // Process each selected student
+                for (const studentId of selectedStudents) {
+                    const cardElement = document.querySelector(`.student-card[data-id="${studentId}"]`);
+                    if (!cardElement) continue;
+
+                    const studentData = JSON.parse(cardElement.getAttribute('data-student'));
+
+                    // Create temporary container for the card
+                    const tempDiv = document.createElement('div');
+                    tempDiv.innerHTML = generateCardHTML(studentData);
+                    tempDiv.style.position = 'absolute';
+                    tempDiv.style.left = '-9999px';
+                    document.body.appendChild(tempDiv);
+
+                    const cardForCapture = tempDiv.querySelector('.student-id-card');
+
+                    try {
+                        // Capture the card as canvas
+                        const canvas = await html2canvas(cardForCapture, {
+                            scale: 3,
+                            useCORS: true,
+                            allowTaint: true,
+                            backgroundColor: null,
+                            logging: false,
+                            imageTimeout: 15000,
+                            onclone: function (clonedDoc) {
+                                // Apply styles to cloned document
+                                clonedDoc.querySelectorAll('.id-card-profile-box img').forEach(img => {
+                                    img.style.width = '100%';
+                                    img.style.height = '100%';
+                                    img.style.objectFit = 'cover';
+                                    img.style.objectPosition = 'center';
+                                });
+
+                                clonedDoc.querySelectorAll('img').forEach(img => {
+                                    img.crossOrigin = 'anonymous';
+                                });
+                            }
+                        });
+
+                        // Convert canvas to blob
+                        const blob = await new Promise(resolve => canvas.toBlob(resolve, 'image/png'));
+
+                        // Add to zip
+                        const fileName = `ID_${studentData.custom_id}_${studentData.lname}.png`;
+                        bulkZip.file(fileName, blob);
+
+                        // Update progress
+                        processed++;
+                        updateBulkProgress(processed, totalCards);
+
+                    } catch (error) {
+                        console.error(`Failed to process student ${studentId}:`, error);
+                    }
+
+                    // Clean up
+                    document.body.removeChild(tempDiv);
+                }
+
+                // Generate and download zip
+                hideLoading();
+                bulkProgressModal.hide();
+
+                showLoading('Creating ZIP file...');
+
+                const content = await bulkZip.generateAsync({ type: 'blob' });
+                saveAs(content, `ID_Cards_${new Date().toISOString().slice(0, 10)}.zip`);
+
+                hideLoading();
+
+                showAlert('success', 'Download Complete',
+                    `Successfully downloaded ${processed} of ${totalCards} ID cards!`, 3000);
+
+            } catch (error) {
+                console.error('Bulk download failed:', error);
+                hideLoading();
+                bulkProgressModal.hide();
+                showAlert('error', 'Download Failed',
+                    'Failed to download ID cards. Please try again.');
+            }
+        }
+
+        function updateBulkProgress(current, total) {
+            const percentage = Math.round((current / total) * 100);
+            document.getElementById('bulkProgressBar').style.width = percentage + '%';
+            document.getElementById('bulkProgressBar').textContent = percentage + '%';
+            document.getElementById('bulkCurrentCount').textContent = current;
         }
 
         function loadImagesForDownload() {
@@ -475,48 +718,33 @@
                     backgroundColor: null,
                     logging: false,
                     imageTimeout: 15000,
-
                     onclone: function (clonedDoc) {
+                        clonedDoc.querySelectorAll('.id-card-profile-box img').forEach(img => {
+                            img.style.width = '100%';
+                            img.style.height = '100%';
+                            img.style.objectFit = 'cover';
+                            img.style.objectPosition = 'center';
+                        });
 
-                        /* ===============================
-                           FORCE STUDENT IMAGE CROP
-                           =============================== */
-                        clonedDoc
-                            .querySelectorAll('.id-card-profile-box img')
-                            .forEach(img => {
-                                img.style.width = '100%';
-                                img.style.height = '100%';
-                                img.style.objectFit = 'cover';
-                                img.style.objectPosition = 'center';
-                            });
-
-                        /* ===============================
-                           CORS SAFETY
-                           =============================== */
                         clonedDoc.querySelectorAll('img').forEach(img => {
                             img.crossOrigin = 'anonymous';
                         });
 
-                        /* ===============================
-                           FONT SAFETY
-                           =============================== */
                         const style = clonedDoc.createElement('style');
                         style.textContent = `
-                        @font-face {
-                            font-family: 'Monbaiti';
-                            src: url('{{ asset('fonts/monbaiti.ttf') }}') format('truetype');
-                        }
-
-                        .student-id-card,
-                        .id-card-student-id,
-                        .id-card-student-name,
-                        .id-card-address {
-                            font-family: 'Monbaiti', serif !important;
-                        }
-                    `;
+                                @font-face {
+                                    font-family: 'Monbaiti';
+                                    src: url('{{ asset('fonts/monbaiti.ttf') }}') format('truetype');
+                                }
+                                .student-id-card,
+                                .id-card-student-id,
+                                .id-card-student-name,
+                                .id-card-address {
+                                    font-family: 'Monbaiti', serif !important;
+                                }
+                            `;
                         clonedDoc.head.appendChild(style);
                     }
-
                 }).then(canvas => {
                     const link = document.createElement('a');
                     link.href = canvas.toDataURL('image/png');
@@ -537,7 +765,6 @@
                 }).catch(error => {
                     console.error('Download failed:', error);
                     hideLoading();
-
                     showAlert(
                         'error',
                         'Download Failed',
@@ -546,7 +773,6 @@
                 });
             }, 500);
         }
-
 
         function showLoading(message = 'Please wait...') {
             Swal.fire({

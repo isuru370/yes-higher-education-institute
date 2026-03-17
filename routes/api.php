@@ -120,7 +120,9 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::prefix('class-rooms')->group(function () {
         Route::get('/active', [ClassRoomController::class, 'fetchActiveClasses']);
         Route::get('/teacher/{teacherId}', [ClassRoomController::class, 'fetchTeacherClasse']);
+        Route::get('/classes/{gradeId}', [ClassRoomController::class, 'getAllClassesByGrades']);
         Route::get('/all', [ClassRoomController::class, 'fetchAllClassRoom']);
+
         // CRUD routes
         Route::get('/', [ClassRoomController::class, 'fetchClasses']);
 
@@ -178,11 +180,14 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::prefix('student-classes')->group(function () {
         Route::post('/bulk', [StudentStudentStudentClassController::class, 'bulkStore']);
         Route::post('/single', [StudentStudentStudentClassController::class, 'storeSingleStudentClass']);
+        Route::get('/read', [StudentStudentStudentClassController::class, 'readStudentClass']);
         //Get students by class and category
         Route::get('/{classId}/category/{categoryId}', [StudentStudentStudentClassController::class, 'getStudentsByClassAndCategory']);
         Route::get('/all/{classId}/category/{categoryId}', [StudentStudentStudentClassController::class, 'allDetailsGetStudentsByClassAndCategory']);
         Route::get('/student/{studentId}/filter', [StudentStudentStudentClassController::class, 'getStudentClassessFilterDetails']);
         Route::get('/student/{studentId}', [StudentStudentStudentClassController::class, 'getStudentClassessDetails']);
+        Route::patch('/toggle/{id}', [StudentStudentStudentClassController::class, 'toggleStudentClassStatus']);
+
         //Activate a single student class record
         Route::put('/{id}/activate', [StudentStudentStudentClassController::class, 'activateStudentClass']);
         Route::put('/bulk-deactivate', [StudentStudentStudentClassController::class, 'bulkDeactivateStudentClasses']);

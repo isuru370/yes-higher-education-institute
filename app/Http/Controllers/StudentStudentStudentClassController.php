@@ -16,6 +16,11 @@ class StudentStudentStudentClassController extends Controller
         $this->studentStudentStudentClassService = $studentStudentStudentClassService;
     }
 
+    public function readStudentClass(Request $request)
+    {
+        return $this->studentStudentStudentClassService->readStudentClass($request);
+    }
+
     public function getStudentsByClassAndCategory($classId, $categoryId)
     {
         return $this->studentStudentStudentClassService->getStudentsByClassAndCategory($classId, $categoryId);
@@ -47,6 +52,11 @@ class StudentStudentStudentClassController extends Controller
     public function bulkDeactivateStudentClasses(Request $request)
     {
         return $this->studentStudentStudentClassService->bulkDeactivateStudentClasses($request);
+    }
+
+    public function toggleStudentClassStatus($id)
+    {
+        return $this->studentStudentStudentClassService->toggleStudentClassStatus($id);
     }
 
     public function bulkStore(Request $request)

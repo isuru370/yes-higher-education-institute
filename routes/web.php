@@ -9,11 +9,11 @@ use App\Http\Controllers\ClassHallsController;
 use App\Http\Controllers\ClassRoomController;
 use App\Http\Controllers\EmailsController;
 use App\Http\Controllers\ExamController;
+use App\Http\Controllers\ForgotPasswordController;
 use App\Http\Controllers\InstitutePaymentController;
 use App\Http\Controllers\PageController;
 use App\Http\Controllers\PaymentReasonController;
 use App\Http\Controllers\PaymentsController;
-use App\Http\Controllers\PermissionController;
 use App\Http\Controllers\ReceiptController;
 use App\Http\Controllers\ReportController;
 use App\Http\Controllers\SettingsCodeController;
@@ -28,11 +28,10 @@ use App\Http\Controllers\TeacherPaymentsController;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Route;
 
-// Welcome Page Route
+
 Route::get('/', function () {
     if (auth()->check()) {
-        return view('welcome');
-        // return redirect('/dashboard');
+        return redirect('/dashboard');
     }
     return view('welcome');
 })->name('welcome');
@@ -41,23 +40,33 @@ Route::get('/student_regiter', function () {
     return view('student_register');
 })->name('student_register');
 
-Route::get('/interactive-learning', function () {
-    return view('interactive-learning');
-})->name('interactive-learning');
+Route::get('/contact_administrator', function () {
+    return view('contact_administrator');
+})->name('contact_administrator');
 
-Route::get('/mobile-app', function () {
-    return view('mobile-app');
-})->name('mobile-app');
 
-Route::get('/web-platform', function () {
-    return view('web-platform');
-})->name('web-platform');
 
-Route::get('/pricing', function () {
-    return view('pricing');
-})->name('pricing');
+Route::prefix('forgot-password')->group(function () {
 
-// Authentication routes - guest users සඳහා පමණි
+    Route::get('/', [ForgotPasswordController::class, 'showForgotForm'])
+        ->name('forgotten_password');
+
+    Route::post('/send-otp', [ForgotPasswordController::class, 'sendOtp'])
+        ->name('forgot_password.send_otp');
+
+    Route::post('/verify-otp', [ForgotPasswordController::class, 'verifyOtp'])
+        ->name('forgot_password.verify_otp');
+
+    Route::post('/resend-otp', [ForgotPasswordController::class, 'resendOtp'])
+        ->name('forgot_password.resend_otp');
+
+    Route::post('/reset', [ForgotPasswordController::class, 'resetPassword'])
+        ->name('forgot_password.reset');
+});
+
+
+
+// Authentication routes
 Route::middleware(['guest'])->group(function () {
     Route::get('/login', [AuthController::class, 'showLoginForm'])->name('login');
     Route::post('/login', [AuthController::class, 'login'])->name('login.post');
