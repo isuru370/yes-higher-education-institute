@@ -94,53 +94,49 @@ class StudentAttendanceService
     }
     public function getStudentClassesDetails($student_id)
     {
-
         if (!$student_id) {
             return [];
         }
 
-        // 1) Student enrollments
         $enrollments = StudentStudentStudentClass::with('studentClass', 'student')
             ->where('student_id', $student_id)
             ->get();
 
-        $studentClassIds = $enrollments->pluck('studentClass.id')->unique();
-        if ($studentClassIds->isEmpty()) {
+        if ($enrollments->isEmpty()) {
             return [];
         }
 
-        // 2) Fetch categories for enrolled classes
-        $allCategories = ClassCategoryHasStudentClass::with('classCategory')
-            ->whereIn('student_classes_id', $studentClassIds)
-            ->get();
+        $categoryIds = $enrollments
+            ->pluck('class_category_has_student_class_id')
+            ->filter()
+            ->unique()
+            ->values();
 
-        $categoryIds = $allCategories->pluck('id')->unique();
         if ($categoryIds->isEmpty()) {
             return [];
         }
 
+        $allCategories = ClassCategoryHasStudentClass::with('classCategory')
+            ->whereIn('id', $categoryIds)
+            ->get()
+            ->keyBy('id');
+
         $today = Carbon::today()->toDateString();
         $now = Carbon::now();
 
-        // 3) Fetch today's classes
         $todaysClasses = ClassAttendance::with('hall')
             ->whereIn('class_category_has_student_class_id', $categoryIds)
             ->whereDate('date', $today)
-            ->get();
+            ->get()
+            ->keyBy('class_category_has_student_class_id');
 
-        // 4) Get student payment and attendance information
         $lastPaymentRecord = Payments::where('student_id', $student_id)->latest()->first();
 
-        // Check if tute exists for this month (format: Y-m)
         $thisMonthAlreadyTute = Titute::where('student_id', $student_id)
             ->whereIn('class_category_has_student_class_id', $categoryIds)
             ->where('titute_for', $now->format('M Y'))
             ->exists();
 
-        // Get all attendance IDs from today's classes for counting
-        $todaysClasses->pluck('id')->toArray();
-
-        // Count attendance for this month for ALL classes (or specific if needed)
         $attendanceCountThisMonth = StudentAttendances::where('student_id', $student_id)
             ->whereBetween('at_date', [$now->copy()->startOfMonth(), $now->copy()->endOfMonth()])
             ->count();
@@ -153,87 +149,82 @@ class StudentAttendanceService
                 continue;
             }
 
-            $categories = $allCategories->where('student_classes_id', $studentClass->id);
+            $catId = $enrollment->class_category_has_student_class_id;
+            $cat = $allCategories->get($catId);
 
-
-            foreach ($categories as $cat) {
-                $todaysClass = $todaysClasses->first(
-                    fn($c) => $c->class_category_has_student_class_id == $cat->id
-                );
-
-                if (!$todaysClass) {
-                    continue;
-                }
-
-                // FIX: parse UTC timestamp to date only for Y-m-d
-                $cleanDate = Carbon::parse($todaysClass->date)->format('Y-m-d');
-
-                $start = $this->parseDateTime($cleanDate, $todaysClass->start_time);
-                $end   = $this->parseDateTime($cleanDate, $todaysClass->end_time);
-
-                if (!$start || !$end) {
-                    continue;
-                }
-
-                $oneHourBefore = $start->copy()->subHour();
-
-                // Check if current time is inside attendance window (1 hour before → end)
-                if (!$now->between($oneHourBefore, $end)) {
-                    continue;
-                }
-
-                // Count attendance for THIS SPECIFIC class for this month
-                $attendanceCountForThisClass = StudentAttendances::where('student_id', $student_id)
-                    ->where('attendance_id', $todaysClass->id)  // For this specific class
-                    ->whereBetween('at_date', [$now->copy()->startOfMonth(), $now->copy()->endOfMonth()])
-                    ->count();
-
-                // Add to result
-                $result[] = [
-                    'category_name' => $cat->classCategory->category_name ?? 'N/A',
-                    'student_class_name' => $studentClass->class_name ?? 'N/A',
-                    'studentStudentStudentClass' => [
-                        'student_student_student_class_id' => $enrollment->id,
-                        'student_class_status' => $enrollment->status,
-                    ],
-                    'student' => [
-                        'id' => $student_id,
-                        'img_url' => $enrollment->student->img_url ?? null,
-                        'custom_id' => $enrollment->student->custom_id,
-                        'first_name' => $enrollment->student->full_name,
-                        'last_name' => $enrollment->student->initial_name,
-                        'guardian_mobile' => $enrollment->student->guardian_mobile
-                    ],
-                    'ongoing_class' => [
-                        'id' => $todaysClass->id,
-                        'class_category_has_student_class_id' => $todaysClass->class_category_has_student_class_id,
-                        'start_time' => $todaysClass->start_time,
-                        'end_time' => $todaysClass->end_time,
-                        'class_hall_id' => $todaysClass->class_hall_id,
-                        'class_hall_name' => $todaysClass->hall->hall_name ?? null,
-                        'class_hall_price' => $todaysClass->hall->hall_price ?? null,
-                        'date' => Carbon::parse($todaysClass->date)->format('Y-m-d'),
-                        'is_ongoing' => $todaysClass->is_ongoing,
-                        'current_time' => $now->format('h:i A'),
-                    ],
-                    // Add payment and attendance information
-                    'payment_info' => $lastPaymentRecord ? [
-                        'last_payment_date' => $lastPaymentRecord->created_at->format('Y-m-d'),
-                        'payment_for' => $lastPaymentRecord->payment_for,
-                        'last_payment_amount' => $lastPaymentRecord->amount,
-                        'payment_status' => $lastPaymentRecord->status,
-                    ] : null,
-                    'tute_info' => [
-                        'has_tute_for_this_month' => $thisMonthAlreadyTute,
-                        'current_month' => $now->format('F Y'),
-                    ],
-                    'attendance_info' => [
-                        'attendance_count_this_month_total' => $attendanceCountThisMonth,
-                        'attendance_count_for_this_class' => $attendanceCountForThisClass,
-                        'current_month' => $now->format('F Y'),
-                    ]
-                ];
+            if (!$cat) {
+                continue;
             }
+
+            $todaysClass = $todaysClasses->get($catId);
+
+            if (!$todaysClass) {
+                continue;
+            }
+
+            $cleanDate = Carbon::parse($todaysClass->date)->format('Y-m-d');
+
+            $start = $this->parseDateTime($cleanDate, $todaysClass->start_time);
+            $end   = $this->parseDateTime($cleanDate, $todaysClass->end_time);
+
+            if (!$start || !$end) {
+                continue;
+            }
+
+            $oneHourBefore = $start->copy()->subHour();
+
+            if (!$now->between($oneHourBefore, $end)) {
+                continue;
+            }
+
+            $attendanceCountForThisClass = StudentAttendances::where('student_id', $student_id)
+                ->where('attendance_id', $todaysClass->id)
+                ->whereBetween('at_date', [$now->copy()->startOfMonth(), $now->copy()->endOfMonth()])
+                ->count();
+
+            $result[] = [
+                'category_name' => $cat->classCategory->category_name ?? 'N/A',
+                'student_class_name' => $studentClass->class_name ?? 'N/A',
+                'studentStudentStudentClass' => [
+                    'student_student_student_class_id' => $enrollment->id,
+                    'student_class_status' => $enrollment->status,
+                ],
+                'student' => [
+                    'id' => $student_id,
+                    'img_url' => $enrollment->student->img_url ?? null,
+                    'custom_id' => $enrollment->student->custom_id,
+                    'first_name' => $enrollment->student->full_name,
+                    'last_name' => $enrollment->student->initial_name,
+                    'guardian_mobile' => $enrollment->student->guardian_mobile
+                ],
+                'ongoing_class' => [
+                    'id' => $todaysClass->id,
+                    'class_category_has_student_class_id' => $todaysClass->class_category_has_student_class_id,
+                    'start_time' => $todaysClass->start_time,
+                    'end_time' => $todaysClass->end_time,
+                    'class_hall_id' => $todaysClass->class_hall_id,
+                    'class_hall_name' => $todaysClass->hall->hall_name ?? null,
+                    'class_hall_price' => $todaysClass->hall->hall_price ?? null,
+                    'date' => Carbon::parse($todaysClass->date)->format('Y-m-d'),
+                    'is_ongoing' => $todaysClass->is_ongoing,
+                    'current_time' => $now->format('h:i A'),
+                ],
+                'payment_info' => $lastPaymentRecord ? [
+                    'last_payment_date' => $lastPaymentRecord->created_at->format('Y-m-d'),
+                    'payment_for' => $lastPaymentRecord->payment_for,
+                    'last_payment_amount' => $lastPaymentRecord->amount,
+                    'payment_status' => $lastPaymentRecord->status,
+                ] : null,
+                'tute_info' => [
+                    'has_tute_for_this_month' => $thisMonthAlreadyTute,
+                    'current_month' => $now->format('F Y'),
+                ],
+                'attendance_info' => [
+                    'attendance_count_this_month_total' => $attendanceCountThisMonth,
+                    'attendance_count_for_this_class' => $attendanceCountForThisClass,
+                    'current_month' => $now->format('F Y'),
+                ]
+            ];
         }
 
         return $result;

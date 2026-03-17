@@ -838,24 +838,6 @@
                     }
                 },
 
-                checkEmailEnabled() {
-                    try {
-                        const emailSettings = localStorage.getItem('email_enabled');
-                        if (emailSettings) {
-                            const settings = JSON.parse(emailSettings);
-                            return settings.email_enabled === true;
-                        }
-                        if (typeof window.getEmailStatus === 'function') {
-                            return window.getEmailStatus();
-                        }
-                        return false;
-                    } catch (error) {
-                        console.error('Error checking email status:', error);
-                        return false;
-                    }
-                },
-
-
                 formatMonthYearForURL(monthYear) {
                     const parts = monthYear.split(' ');
                     if (parts.length === 2) {
@@ -1746,7 +1728,6 @@
                             hidePaymentProcessing();
 
                             const isPrintingEnabled = utils.checkPrintingEnabled();
-                            const isEmailEnabled = utils.checkEmailEnabled();
 
                             // PRINT SALARY SLIP if enabled in settings (NOT email)
                             if (isPrintingEnabled) {
@@ -1756,13 +1737,7 @@
                                 }, 500);
                             }
 
-                            // SEND EMAIL if email is enabled (different from printing)
-                            if (isEmailEnabled) {
-                                // This sends the payment email report
-                                sendEmailToTeacher(teacherId, monthYear);
-                            }
-
-                            showPaymentSuccess(data, teacherId, teacherName, amount, monthYear, isPrintingEnabled, isEmailEnabled);
+                            showPaymentSuccess(data, teacherId, teacherName, amount, monthYear, isPrintingEnabled);
 
                             // Refresh data
                             setTimeout(() => {
@@ -1901,7 +1876,6 @@
                 `;
 
                 const isPrintingEnabled = utils.checkPrintingEnabled();
-                const isEmailEnabled = utils.checkEmailEnabled();
 
                 let printMessage = '';
                 let emailMessage = '';
@@ -1910,11 +1884,7 @@
                     printMessage = '<br>• Salary slip will be printed';
                 }
 
-                if (isEmailEnabled) {
-                    emailMessage = '<br>• Payment report will be emailed';
-                }
-
-                const featuresMessage = isPrintingEnabled || isEmailEnabled
+                const featuresMessage = isPrintingEnabled
                     ? `After payment:${printMessage}${emailMessage}`
                     : 'Payment will be processed (no additional actions)';
 
@@ -1973,7 +1943,7 @@
                 }
             }
 
-            function showPaymentSuccess(data, teacherId, teacherName, amount, monthYear, isPrintingEnabled, isEmailEnabled) {
+            function showPaymentSuccess(data, teacherId, teacherName, amount, monthYear, isPrintingEnabled) {
                 const modal = document.createElement('div');
                 modal.id = 'paymentSuccess';
                 modal.style.cssText = `
@@ -2030,36 +2000,6 @@
                     `;
                 }
 
-                if (isEmailEnabled) {
-                    emailStatusMessage = `
-                        <div style="
-                            background: #e8f4fd;
-                            padding: 8px;
-                            border-radius: 4px;
-                            margin-bottom: 15px;
-                            border-left: 3px solid #4e73df;
-                        ">
-                            <p style="margin: 0; color: #2e59d9; font-size: 12px;">
-                                <i class="fas fa-check-circle me-1"></i>
-                                Payment report has been emailed to teacher
-                            </p>
-                        </div>
-                    `;
-                    actionsHTML += `
-                        <button id="emailAgainBtn" style="
-                            background: #36b9cc;
-                            color: white;
-                            border: none;
-                            padding: 8px 15px;
-                            border-radius: 4px;
-                            cursor: pointer;
-                            font-size: 14px;
-                            flex: 1;
-                        ">
-                            <i class="fas fa-envelope me-1"></i> Resend Email
-                        </button>
-                    `;
-                }
 
                 actionsHTML += `
                     <button id="closeBtn" style="
@@ -2133,13 +2073,6 @@
                     document.getElementById('printAgainBtn').addEventListener('click', function () {
                         utils.openSalarySlip(teacherId, utils.currentYear, utils.currentMonth);
                         utils.showToast('Printing salary slip again...', 'info');
-                    });
-                }
-
-                if (isEmailEnabled) {
-                    document.getElementById('emailAgainBtn').addEventListener('click', function () {
-                        sendEmailToTeacher(teacherId, monthYear);
-                        utils.showToast('Payment report email sent again', 'success');
                     });
                 }
 

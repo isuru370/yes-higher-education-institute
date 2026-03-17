@@ -867,23 +867,6 @@
                     }
                 },
 
-                checkEmailEnabled() {
-                    try {
-                        const emailSettings = localStorage.getItem('email_enabled');
-                        if (emailSettings) {
-                            const settings = JSON.parse(emailSettings);
-                            return settings.email_enabled === true;
-                        }
-                        if (typeof window.getEmailStatus === 'function') {
-                            return window.getEmailStatus();
-                        }
-                        return false;
-                    } catch (error) {
-                        console.error('Error checking email status:', error);
-                        return false;
-                    }
-                },
-
 
                 formatMonthYearForURL(monthYear) {
                     const parts = monthYear.split(' ');
@@ -1795,7 +1778,6 @@
                             hidePaymentProcessing();
 
                             const isPrintingEnabled = utils.checkPrintingEnabled();
-                            const isEmailEnabled = utils.checkEmailEnabled();
 
                             // PRINT SALARY SLIP if enabled
                             if (isPrintingEnabled) {
@@ -1804,12 +1786,7 @@
                                 }, 500);
                             }
 
-                            // SEND EMAIL if enabled
-                            if (isEmailEnabled) {
-                                sendPaymentReportToTeacher(teacherId, formattedMonthYear);
-                            }
-
-                            showPaymentSuccess(data, teacherId, teacherName, amount, formattedMonthYear, isPrintingEnabled, isEmailEnabled);
+                            showPaymentSuccess(data, teacherId, teacherName, amount, formattedMonthYear, isPrintingEnabled);
 
                             // Refresh data
                             setTimeout(() => {
@@ -1846,7 +1823,6 @@
                                     `;
 
                 const isPrintingEnabled = utils.checkPrintingEnabled();
-                const isEmailEnabled = utils.checkEmailEnabled();
 
                 let printMessage = '';
                 let emailMessage = '';
@@ -1855,11 +1831,7 @@
                     printMessage = '<br>• Salary slip will be printed';
                 }
 
-                if (isEmailEnabled) {
-                    emailMessage = '<br>• Payment report will be emailed';
-                }
-
-                const featuresMessage = isPrintingEnabled || isEmailEnabled
+                const featuresMessage = isPrintingEnabled
                     ? `After payment:${printMessage}${emailMessage}`
                     : 'Payment will be processed (no additional actions)';
 
@@ -1918,7 +1890,7 @@
                 }
             }
 
-            function showPaymentSuccess(data, teacherId, teacherName, amount, monthYear, isPrintingEnabled, isEmailEnabled) {
+            function showPaymentSuccess(data, teacherId, teacherName, amount, monthYear, isPrintingEnabled) {
                 const modal = document.createElement('div');
                 modal.id = 'paymentSuccess';
                 modal.style.cssText = `
@@ -1971,37 +1943,6 @@
                                                 flex: 1;
                                             ">
                                                 <i class="fas fa-print me-1"></i> Print Slip Again
-                                            </button>
-                                        `;
-                }
-
-                if (isEmailEnabled) {
-                    emailStatusMessage = `
-                                            <div style="
-                                                background: #e8f4fd;
-                                                padding: 8px;
-                                                border-radius: 4px;
-                                                margin-bottom: 15px;
-                                                border-left: 3px solid #4e73df;
-                                            ">
-                                                <p style="margin: 0; color: #2e59d9; font-size: 12px;">
-                                                    <i class="fas fa-check-circle me-1"></i>
-                                                    Payment report has been emailed to teacher
-                                                </p>
-                                            </div>
-                                        `;
-                    actionsHTML += `
-                                            <button id="emailAgainBtn" style="
-                                                background: #36b9cc;
-                                                color: white;
-                                                border: none;
-                                                padding: 8px 15px;
-                                                border-radius: 4px;
-                                                cursor: pointer;
-                                                font-size: 14px;
-                                                flex: 1;
-                                            ">
-                                                <i class="fas fa-envelope me-1"></i> Resend Email
                                             </button>
                                         `;
                 }
@@ -2078,13 +2019,6 @@
                     document.getElementById('printAgainBtn').addEventListener('click', function () {
                         openSalarySlip(teacherId, elements.yearSelect.value, elements.monthSelect.value);
                         utils.showToast('Printing salary slip again...', 'info');
-                    });
-                }
-
-                if (isEmailEnabled) {
-                    document.getElementById('emailAgainBtn').addEventListener('click', function () {
-                        sendPaymentReportToTeacher(teacherId, monthYear);
-                        utils.showToast('Payment report email sent again', 'success');
                     });
                 }
 

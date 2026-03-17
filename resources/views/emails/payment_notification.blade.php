@@ -106,7 +106,7 @@
             </p>
 
             <p>Best regards,<br>
-                <strong>Savidya Education</strong><br>
+                <strong>YES EDUCATION</strong><br>
                 Accounts Department
             </p>
         </div>

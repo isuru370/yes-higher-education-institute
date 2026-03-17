@@ -24,7 +24,7 @@ class AuthController extends Controller
     {
         return $this->authService->user($request);
     }
-    
+
     public function profile(Request $request)
     {
         return $this->authService->profile($request);

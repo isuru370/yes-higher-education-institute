@@ -490,12 +490,6 @@
                     <div class="collapse {{ request()->routeIs('students.*') ? 'show' : '' }}" id="studentsSubmenu">
                         <ul class="nav flex-column ms-3">
                             <li class="nav-item">
-                                <a class="nav-link {{ request()->routeIs('students.import') ? 'active' : '' }}"
-                                    href="{{ route('students.import.form') }}">
-                                    <i class="fas fa-plus-circle"></i> Import Students
-                                </a>
-                            </li>
-                            <li class="nav-item">
                                 <a class="nav-link {{ request()->routeIs('students.create') ? 'active' : '' }}"
                                     href="{{ route('students.create') }}">
                                     <i class="fas fa-plus-circle"></i> Add New Student
@@ -839,10 +833,10 @@
         <div class="container-fluid">
             <div class="row align-items-center">
                 <div class="col-md-6">
-                    <small>&copy; 2025 AlokaIt Software Soluation. All rights reserved.</small>
+                    <small>&copy; 2026 Nexora IT Software Soluation. All rights reserved.</small>
                 </div>
                 <div class="col-md-6 text-md-end">
-                    <small>Version 2.1.0</small>
+                    <small>Version 2.2.5</small>
                 </div>
             </div>
         </div>

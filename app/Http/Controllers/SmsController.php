@@ -7,45 +7,61 @@ use Illuminate\Http\Request;
 
 class SmsController extends Controller
 {
-
-    protected $smsService;
+    protected SmsService $smsService;
 
     public function __construct(SmsService $smsService)
     {
         $this->smsService = $smsService;
     }
 
-    // Send Single SMS
-    public function send($number, $message)
+    // POST /api/send-sms/single
+    public function send(Request $request)
     {
-        $response = $this->smsService->sendSms($number, $message);
+        $validated = $request->validate([
+            'number' => ['required', 'string'],
+            'message' => ['required', 'string', 'max:612'],
+        ]);
+
+        $response = $this->smsService->sendSms(
+            $validated['number'],
+            $validated['message']
+        );
 
         return response()->json($response);
     }
 
-
-    // Send Bulk SMS
+    // POST /api/send-sms/bulk
     public function sendBulk(Request $request)
     {
+        $validated = $request->validate([
+            'numbers' => ['required', 'array', 'min:1'],
+            'numbers.*' => ['required', 'string'],
+            'message' => ['required', 'string', 'max:612'],
+            'campaignName' => ['nullable', 'string', 'max:100'],
+        ]);
 
-        $numbers = $request->numbers;
-        $message = $request->message;
-        $campaign = $request->campaignName;
-
-        $response = $this->smsService->sendBulkSms($numbers, $message, $campaign);
+        $response = $this->smsService->sendBulkSms(
+            $validated['numbers'],
+            $validated['message'],
+            $validated['campaignName'] ?? 'LaravelCampaign'
+        );
 
         return response()->json($response);
     }
 
-    public function sendOtp($number)
+    // POST /api/send-sms/otp
+    public function sendOtp(Request $request)
     {
-        $response = $this->smsService->sendOtp($number);
+        $validated = $request->validate([
+            'number' => ['required', 'string'],
+        ]);
+
+        $response = $this->smsService->sendOtp($validated['number']);
 
         return response()->json($response);
     }
 
-
-    // Check Balance
+    // GET /api/send-sms/balance
     public function balance()
     {
         $response = $this->smsService->getBalance();

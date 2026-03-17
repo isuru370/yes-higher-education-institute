@@ -351,29 +351,29 @@ class StudentPaymentService
             ));
 
             // Get child info
-            // $childInfo = StudentStudentStudentClass::with([
-            //     'student',
-            //     'studentClass',
-            //     'classCategoryHasStudentClass.classCategory'
-            // ])->where('id', $validated['student_student_student_classes_id'])
-            //     ->first();
+            $childInfo = StudentStudentStudentClass::with([
+                'student',
+                'studentClass',
+                'classCategoryHasStudentClass.classCategory'
+            ])->where('id', $validated['student_student_student_classes_id'])
+                ->first();
 
             DB::commit();
 
             // ✅ SMS sending via Queue Job
-            // if ($validated['status'] == 1 && $childInfo) {
-            //     $guardianNumber = $validated['guardian_mobile'];
-            //     $amount = $validated['amount'];
-            //     $month = $validated['payment_for'];
-            //     $childName = $childInfo->student->initial_name ?? '';
-            //     $className = $childInfo->studentClass->class_name ?? '';
-            //     $categoryName = optional($childInfo->classCategoryHasStudentClass->classCategory)->category_name ?? '';
+            if ($validated['status'] == 1 && $childInfo) {
+                $guardianNumber = $validated['guardian_mobile'];
+                $amount = $validated['amount'];
+                $month = $validated['payment_for'];
+                $childName = $childInfo->student->initial_name ?? '';
+                $className = $childInfo->studentClass->class_name ?? '';
+                $categoryName = optional($childInfo->classCategoryHasStudentClass->classCategory)->category_name ?? '';
 
-            //     $message = "Payment received for {$childName} ({$className} - {$categoryName}): LKR {$amount} for {$month}. Thank you.";
+                $message = "Payment received for {$childName} ({$className} - {$categoryName}): LKR {$amount} for {$month}. Thank you.";
 
-            //     // Dispatch SMS job to async queue
-            //     SendPaymentSms::dispatch($guardianNumber, $message)->onQueue('sms');
-            // }
+                // Dispatch SMS job to async queue
+                SendPaymentSms::dispatch($guardianNumber, $message)->onQueue('sms');
+            }
 
             return response()->json([
                 'status' => 'success',

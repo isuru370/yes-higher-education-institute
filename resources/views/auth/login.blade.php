@@ -141,9 +141,9 @@
                         <i class="fas fa-sign-in-alt me-2"></i>Login to Your Account
                     </button>
 
-                    @if (Route::has('password.request'))
+                    @if (Route::has('forgotten_password'))
                         <div class="text-center mb-3">
-                            <a href="{{ route('password.request') }}" class="text-decoration-none">
+                            <a href="{{ route('forgotten_password') }}" class="text-decoration-none">
                                 <i class="fas fa-key me-1"></i>Forgot Your Password?
                             </a>
                         </div>
@@ -151,9 +151,8 @@
                 </form>
 
                 <div class="login-footer-text">
-                   
                     <p class="mb-0">
-                        <a href="#" class="text-decoration-none">
+                        <a href="{{ route('contact_administrator') }}" class="text-decoration-none">
                             <i class="fas fa-user-plus me-1"></i>Contact Administrator
                         </a>
                     </p>

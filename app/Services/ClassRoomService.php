@@ -89,6 +89,85 @@ class ClassRoomService
         }
     }
 
+    public function getAllClassesByGrades($gradeId)
+    {
+        try {
+            if (!is_numeric($gradeId)) {
+                return response()->json([
+                    'status'  => 'error',
+                    'message' => 'Invalid grade id',
+                ], 422);
+            }
+
+            $classes = ClassRoom::with(['subject', 'grade', 'teacher'])
+                ->where('is_active', 1)
+                ->where('is_ongoing', 1)
+                ->where('grade_id', $gradeId)
+                ->orderBy('subject_id')
+                ->get();
+
+            if ($classes->isEmpty()) {
+                return response()->json([
+                    'status'   => 'success',
+                    'grade_id' => (string) $gradeId,
+                    'data'     => [],
+                ], 200);
+            }
+
+            $classIds = $classes->pluck('id')->toArray();
+
+            $categoryRows = DB::table('class_category_has_student_class as cchs')
+                ->join('class_categories as cc', 'cc.id', '=', 'cchs.class_category_id')
+                ->whereIn('cchs.student_classes_id', $classIds)
+                ->select(
+                    'cchs.id as class_category_has_student_class_id',
+                    'cchs.student_classes_id',
+                    'cc.id as category_id',
+                    'cc.category_name',
+                    'cchs.fees'
+                )
+                ->get();
+
+            $categoriesByClassId = $categoryRows
+                ->groupBy('student_classes_id')
+                ->map(function ($rows) {
+                    return $rows->map(function ($row) {
+                        return [
+                            'class_category_has_student_class_id' => $row->class_category_has_student_class_id,
+                            'category_name' => $row->category_name,
+                            'fees'          => $row->fees,
+                        ];
+                    })->values()->toArray();
+                });
+
+            $result = [];
+
+            foreach ($classes as $class) {
+                $grade = (string) $class->grade_id;
+                $subject = $class->subject->subject_name ?? 'Unknown Subject';
+
+                $result[$grade][$subject][] = [
+                    'class_id'       => $class->id,
+                    'class_name'     => $class->class_name,
+                    'medium'         => $class->medium,
+                    'teacher_fname'  => $class->teacher->fname ?? null,
+                    'teacher_lname'  => $class->teacher->lname ?? null,
+                    'categories'     => $categoriesByClassId->get($class->id, []),
+                ];
+            }
+
+            return response()->json([
+                'status'   => 'success',
+                'grade_id' => (string) $gradeId,
+                'data'     => $result,
+            ], 200);
+        } catch (Exception $e) {
+            return response()->json([
+                'status'  => 'error',
+                'message' => 'Failed to fetch classes by grade id',
+            ], 500);
+        }
+    }
 
     // ========================
     // Store new Class Room

@@ -556,46 +556,46 @@
                     }
 
                     row.innerHTML = `
-                            <td class="py-1"><small>${teacher.teacher_id || ''}</small></td>
-                            <td class="py-1 ${hasBreakdown ? 'cursor-pointer' : ''}" ${hasBreakdown ? 'onclick="showTeacherBreakdown(this)"' : ''}>
-                                <small>${teacher.teacher_name || ''}</small>
-                                ${hasBreakdown ? '<br><small class="text-primary" style="font-size: 0.75rem;"><i class="fas fa-info-circle"></i> View breakdown</small>' : ''}
-                            </td>
-                            <td class="py-1 text-end"><small>${formatCurrency(totalPayments)}</small></td>
-                            <td class="py-1 text-end"><small>${formatCurrency(grossEarning)}</small></td>
-                            <td class="py-1 text-end"><small>${formatCurrency(advanceDeducted)}</small></td>
-                            <td class="py-1 text-end">
-                                <small class="${netPayable > 0 ? 'text-success fw-bold' : ''}">${formatCurrency(netPayable)}</small>
-                            </td>
-                            <td class="py-1 text-end"><small>${formatCurrency(institutionIncome)}</small></td>
-                            <td class="py-1 text-center">
-                                <div class="btn-group btn-group-sm" role="group">
-                                    <a href="${API_ENDPOINTS.viewTeacher(teacher.teacher_id)}" 
-                                       class="btn btn-info btn-sm" target="_blank" title="View Details">
-                                        <i class="fas fa-eye"></i>
-                                    </a>
-                                    ${showPayButton ? `
-                                    <a href="${API_ENDPOINTS.payTeacher(teacher.teacher_id)}" 
-                                       class="btn btn-success btn-sm ${netPayable === 0 ? 'disabled' : ''}"
-                                       ${netPayable === 0 ? 'aria-disabled="true" title="No payment due"' : 'title="Make Payment"'}
-                                       onclick="return ${netPayable > 0 ? 'true' : 'false'}">
-                                        <i class="fas fa-money-bill-wave"></i>
-                                    </a>
-                                    ` : ''}
-                                    <button type="button" class="btn btn-warning btn-sm advance-btn" 
-                                            data-teacher-id="${teacher.teacher_id || ''}"
-                                            data-teacher-name="${teacher.teacher_name || ''}"
-                                            data-teacher-earning="${netPayable}"
-                                            ${!canAdvance ? 'disabled title="No net payable available"' : 'title="Make Advance Payment"'}>
-                                        <i class="fas fa-hand-holding-usd"></i>
-                                    </button>
-                                    <a href="${API_ENDPOINTS.payhistory(teacher.teacher_id)}" 
-                                       class="btn btn-primary btn-sm" title="Payment History">
-                                        <i class="fas fa-history"></i>
-                                    </a>
-                                </div>
-                            </td>
-                        `;
+                                <td class="py-1"><small>${teacher.teacher_id || ''}</small></td>
+                                <td class="py-1 ${hasBreakdown ? 'cursor-pointer' : ''}" ${hasBreakdown ? 'onclick="showTeacherBreakdown(this)"' : ''}>
+                                    <small>${teacher.teacher_name || ''}</small>
+                                    ${hasBreakdown ? '<br><small class="text-primary" style="font-size: 0.75rem;"><i class="fas fa-info-circle"></i> View breakdown</small>' : ''}
+                                </td>
+                                <td class="py-1 text-end"><small>${formatCurrency(totalPayments)}</small></td>
+                                <td class="py-1 text-end"><small>${formatCurrency(grossEarning)}</small></td>
+                                <td class="py-1 text-end"><small>${formatCurrency(advanceDeducted)}</small></td>
+                                <td class="py-1 text-end">
+                                    <small class="${netPayable > 0 ? 'text-success fw-bold' : ''}">${formatCurrency(netPayable)}</small>
+                                </td>
+                                <td class="py-1 text-end"><small>${formatCurrency(institutionIncome)}</small></td>
+                                <td class="py-1 text-center">
+                                    <div class="btn-group btn-group-sm" role="group">
+                                        <a href="${API_ENDPOINTS.viewTeacher(teacher.teacher_id)}" 
+                                           class="btn btn-info btn-sm"  title="View Details">
+                                            <i class="fas fa-eye"></i>
+                                        </a>
+                                        ${showPayButton ? `
+                                        <a href="${API_ENDPOINTS.payTeacher(teacher.teacher_id)}" 
+                                           class="btn btn-success btn-sm ${netPayable === 0 ? 'disabled' : ''}"
+                                           ${netPayable === 0 ? 'aria-disabled="true" title="No payment due"' : 'title="Make Payment"'}
+                                           onclick="return ${netPayable > 0 ? 'true' : 'false'}">
+                                            <i class="fas fa-money-bill-wave"></i>
+                                        </a>
+                                        ` : ''}
+                                        <button type="button" class="btn btn-warning btn-sm advance-btn" 
+                                                data-teacher-id="${teacher.teacher_id || ''}"
+                                                data-teacher-name="${teacher.teacher_name || ''}"
+                                                data-teacher-earning="${netPayable}"
+                                                ${!canAdvance ? 'disabled title="No net payable available"' : 'title="Make Advance Payment"'}>
+                                            <i class="fas fa-hand-holding-usd"></i>
+                                        </button>
+                                        <a href="${API_ENDPOINTS.payhistory(teacher.teacher_id)}" 
+                                           class="btn btn-primary btn-sm" title="Payment History">
+                                            <i class="fas fa-history"></i>
+                                        </a>
+                                    </div>
+                                </td>
+                            `;
 
                     teacherTableBody.appendChild(row);
                 });
@@ -655,13 +655,13 @@
 
                         const row = document.createElement('tr');
                         row.innerHTML = `
-                                <td class="py-1"><small>${item.class_id || ''}</small></td>
-                                <td class="py-1"><small>${item.class_name || ''}</small></td>
-                                <td class="py-1 text-end"><small>${formatPercentage(item.teacher_percentage)}</small></td>
-                                <td class="py-1 text-end"><small>${formatCurrency(classAmount)}</small></td>
-                                <td class="py-1 text-end"><small>${formatCurrency(teacherCut)}</small></td>
-                                <td class="py-1 text-end"><small>${formatCurrency(institutionCut)}</small></td>
-                            `;
+                                    <td class="py-1"><small>${item.class_id || ''}</small></td>
+                                    <td class="py-1"><small>${item.class_name || ''}</small></td>
+                                    <td class="py-1 text-end"><small>${formatPercentage(item.teacher_percentage)}</small></td>
+                                    <td class="py-1 text-end"><small>${formatCurrency(classAmount)}</small></td>
+                                    <td class="py-1 text-end"><small>${formatCurrency(teacherCut)}</small></td>
+                                    <td class="py-1 text-end"><small>${formatCurrency(institutionCut)}</small></td>
+                                `;
                         breakdownTableBody.appendChild(row);
                     });
 
@@ -750,12 +750,12 @@
                 const alertDiv = document.createElement('div');
                 alertDiv.className = `alert ${alertConfig.class} alert-dismissible fade show py-2`;
                 alertDiv.innerHTML = `
-                        <div class="d-flex align-items-center">
-                            <i class="fas ${alertConfig.icon} me-2"></i>
-                            <div><small>${message}</small></div>
-                        </div>
-                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-                    `;
+                            <div class="d-flex align-items-center">
+                                <i class="fas ${alertConfig.icon} me-2"></i>
+                                <div><small>${message}</small></div>
+                            </div>
+                            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                        `;
 
                 const cardBody = document.querySelector('.card-body');
                 if (cardBody) {
@@ -1210,7 +1210,7 @@
                 const lastDayOfMonth = new Date(today.getFullYear(), today.getMonth() + 1, 0).getDate();
                 const currentDay = today.getDate();
 
-                return currentDay > (lastDayOfMonth - 25);
+                return currentDay > (lastDayOfMonth - 5);
             }
 
             // Initialize everything

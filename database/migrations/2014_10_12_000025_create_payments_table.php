@@ -13,7 +13,7 @@ class CreatePaymentsTable extends Migration
             $table->bigIncrements('id');
             $table->dateTime('payment_date');
             $table->boolean('status');
-            $table->string('amount');
+            $table->decimal('amount', 10, 2);
             $table->string('payment_for');
             $table->foreignId('student_id')
                 ->constrained('students');

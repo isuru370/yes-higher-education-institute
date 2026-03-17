@@ -167,8 +167,8 @@
         </div>
 
         <div class="header">
-            <h2>NexOra Education</h2>
-            <h3>Mirigama</h3>
+            <h2>YES HIGHER EDUCATION INSTITUTE</h2>
+            <h3>WARIYAPOLA</h3>
             <h3>Salary Slip</h3>
         </div>
 

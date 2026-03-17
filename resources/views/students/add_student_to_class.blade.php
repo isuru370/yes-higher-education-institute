@@ -625,7 +625,7 @@
                         <span class="badge bg-secondary">${student.custom_id}</span>
                     </td>
                     <td>
-                        <strong>${student.fname} ${student.lname}</strong>
+                        <strong>${student.initial_name}</strong>
                     </td>
                     <td>
                         <span class="badge bg-info">${student.grade ? 'Grade ' + student.grade.grade_name : 'N/A'}</span>

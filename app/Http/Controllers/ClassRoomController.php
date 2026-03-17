@@ -41,6 +41,11 @@ class ClassRoomController extends Controller
         return $this->classRoomService->fetchTeacherClasse($teacher_id);
     }
 
+       public function getAllClassesByGrades($gradeId)
+    {
+        return $this->classRoomService->getAllClassesByGrades($gradeId);
+    }
+
     public function deactivateClassActive($id)
     {
         return $this->classRoomService->deactivateClassActive($id);
