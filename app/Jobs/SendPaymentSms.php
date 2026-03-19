@@ -25,26 +25,22 @@ class SendPaymentSms implements ShouldQueue
     {
         $this->guardianNumber = $guardianNumber;
         $this->message = $message;
+        $this->onQueue('sms');
     }
 
-    public function handle(SmsService $smsService)
+    public function handle(SmsService $smsService): void
     {
-        try {
-            $response = $smsService->sendSms($this->guardianNumber, $this->message);
+        $response = $smsService->sendSms($this->guardianNumber, $this->message);
 
-            Log::info('SMS sent successfully', [
-                'guardian_number' => $this->guardianNumber,
-                'response' => $response
-            ]);
-        } catch (\Throwable $e) {
-            Log::error('SMS sending failed', [
+        if (!($response['success'] ?? false)) {
+
+            Log::warning('SMS sending failed', [
                 'guardian_number' => $this->guardianNumber,
                 'attempt' => $this->attempts(),
-                'error' => $e->getMessage(),
-                'will_retry' => $this->attempts() < $this->tries
+                'response' => $response
             ]);
 
-            throw $e;
+            throw new \Exception($response['provider_message'] ?? 'SMS sending failed');
         }
     }
 
